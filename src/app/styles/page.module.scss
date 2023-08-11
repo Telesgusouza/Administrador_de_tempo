@@ -1,3 +1,10 @@
 .container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
+.containerContent {
+background-color: red;
+margin: auto;
 }

@@ -1,1 +1,10 @@
-/*# sourceMappingURL=page.module.css.map */
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.containerContent {
+  background-color: red;
+  margin: auto;
+}/*# sourceMappingURL=page.module.css.map */
