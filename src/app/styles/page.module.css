@@ -1,10 +1,138 @@
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500&display=swap");
 .container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 50px 20px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
+.info {
+  margin-bottom: 20px;
+}
+.info h1 {
+  margin-bottom: 5px;
+}
+.info p {
+  font-size: 0.9rem;
+}
+
 .containerContent {
-  background-color: red;
-  margin: auto;
+  width: 100%;
+  max-width: 400px;
+}
+.containerContent form {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 25px;
+}
+.containerContent input {
+  padding: 7px 40px 2px 10px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid hsl(264, 100%, 60%);
+  color: white;
+  outline: 0;
+}
+.containerContent input:focus {
+  border-bottom: 2px solid hsl(264, 100%, 71%);
+}
+.containerContent input::-moz-placeholder {
+  color: rgba(255, 255, 255, 0.841);
+}
+.containerContent input::placeholder {
+  color: rgba(255, 255, 255, 0.841);
+}
+.containerContent label {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.containerContent label input {
+  width: 100%;
+}
+.containerContent label img {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+}
+.containerContent .toggleOptionLogin {
+  width: -moz-fit-content;
+  width: fit-content;
+  margin: 0 auto;
+  font-size: 0.9rem;
+}
+.containerContent .toggleOptionLogin strong {
+  cursor: pointer;
+  position: relative;
+}
+.containerContent .toggleOptionLogin strong::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  height: 1px;
+  width: 0%;
+  background-color: white;
+  transition: all 0.2s ease;
+}
+.containerContent .toggleOptionLogin strong:hover::after {
+  left: 0%;
+  width: 100%;
+}
+.containerContent .password {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+}
+.containerContent .password label {
+  width: 100%;
+}
+.containerContent .password p {
+  width: -moz-fit-content;
+  width: fit-content;
+  margin-top: 10px;
+  text-align: right;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.containerContent button {
+  width: 100%;
+  padding: 8px 15px;
+  border: none;
+  font-weight: 600;
+  background-color: hsl(264, 100%, 60%);
+  color: white;
+}
+.containerContent button:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.photo {
+  background-color: rgb(211, 211, 211);
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.photo input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.photo img {
+  width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
 }/*# sourceMappingURL=page.module.css.map */
