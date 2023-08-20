@@ -23,9 +23,9 @@ export default function Home() {
   const [filePhoto, setFilePhoto] = useState<null | File>(null);
   const [avatar, setAvatar] = useState<null | string>(null);
 
-  const [name, setName] = useState<string>("aaa");
-  const [email, setEmail] = useState<string>("aa@aa.co");
-  const [password, setPassword] = useState<string>("aaaaaa");
+  const [name, setName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [btnDisabled, setBtnDisabled] = useState<boolean>(false);
 
   const [toggleForm, setToggleForm] = useState<boolean>(false);

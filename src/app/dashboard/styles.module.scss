@@ -24,6 +24,9 @@
     border-radius: 15px;
     background-color: var(--darkBlue);
 
+    position: relative;
+    z-index: 1;
+
     ul {
       padding: 15px 20px;
 
@@ -76,6 +79,56 @@
   }
 }
 
+.containerOption {
+  position: absolute;
+  top: 99%;
+  width: 100%;
+  height: fit-content;
+
+  background-color: var(--darkBlue);
+
+  border-top: 4px solid rgba(255, 255, 255, 0.404);
+  // flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr;
+
+  @media (max-width: 860px) {
+    border-top: 2px solid rgba(255, 255, 255, 0.404);
+    position: initial;
+
+    display: flex;
+    justify-content: initial !important;
+    flex-wrap: wrap;
+  }
+}
+
+.containerSleep {
+  padding: 20px 15px 0 20px;
+
+  button {
+    border: none;
+    padding: 7px 15px;
+
+    color: white;
+    background-color: #5746ea;
+
+    transition: opacity .12s ease;
+
+    &:hover {
+      opacity: .8;
+    }
+  }
+
+  strong {
+    margin-left: 20px;
+    font-weight: 300;
+  }
+
+  @media (max-width: 860px) {
+    padding-left: 32px;
+  }
+}
+
 .contentUser {
   width: 100%;
   min-height: 350px;
@@ -97,6 +150,8 @@
     border-radius: 50%;
     border: 3px solid white;
     object-fit: cover;
+
+    cursor: pointer;
   }
 
   span {
@@ -121,11 +176,8 @@
     }
   }
 
-
   @media (max-width: 500px) {
     align-items: center;
-
-   
 
     img {
       width: 80px;
@@ -136,10 +188,36 @@
       width: 100%;
 
       font-size: 1.5rem;
-
     }
   }
 }
+
+
+
+
+.DifferentValue {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column !important;
+
+  p {
+    font-size: .75rem;
+    font-weight: 500;
+  }
+
+  .above {
+    // color: rgb(255, 32, 32);
+    color: rgb(255, 99, 99);
+  }
+
+  .below {
+    color: rgb(67, 67, 255);
+  }
+}
+
+
+
+
 
 .containerSection {
   width: 100%;
@@ -150,6 +228,25 @@
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr;
   grid-gap: 25px;
+
+  .secWork {
+    background-color: var(--lightRedWork);
+  }
+  .secPlay {
+    background-color: var(--softBluePlay);
+  }
+  .secStudy {
+    background-color: var(--lightRedStudy);
+  }
+  .secExercise {
+    background-color: var(--limegreenExercise);
+  }
+  .secSocial {
+    background-color: var(--violetSocial);
+  }
+  .secSelfCare {
+    background-color: var(--softOrageSelfCare);
+  }
 
   article {
     display: none;
@@ -163,7 +260,12 @@
     position: relative;
     overflow: hidden;
 
-    background-color: red;
+    cursor: pointer;
+  }
+
+  strong {
+    font-size: 0.8rem;
+    font-weight: 500;
   }
 
   img {
@@ -234,5 +336,107 @@
 
   @media (max-width: 500px) {
     grid-template-columns: 1fr;
+  }
+}
+
+.containerEditCard {
+  width: 100vw;
+  height: 100vh;
+
+  padding: 20px;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 55;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  background-color: hsla(226, 41%, 10%, 0.4);
+
+  .containerEdit {
+    width: 100%;
+    max-width: 350px;
+    padding: 20px;
+
+    border-radius: 5px;
+
+    box-shadow: 0 0 20px hsla(226, 30%, 21%, 0.497);
+    background-color: var(--darkBlue);
+
+    h3 {
+      font-size: 1.7rem;
+      font-weight: 300;
+    }
+
+    p {
+      margin: 0;
+
+      font-size: 0.9rem;
+      margin-bottom: 18px;
+    }
+
+    form {
+      width: 100%;
+
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-gap: 15px;
+    }
+
+    input {
+      padding: 0 10px 2px 6px;
+
+      border: none;
+      border-bottom: 2px solid #5746ea;
+      background-color: transparent;
+
+      color: white;
+
+      outline: 0;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.73);
+      }
+    }
+
+    button {
+      padding: 7px 10px;
+
+      border: none;
+
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: white;
+      background-color: #5746ea;
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: .7;
+      }
+    }
+  }
+
+  .containerEditBtn {
+    width: 100%;
+    max-width: 350px;
+    margin-bottom: 18px;
+
+    button {
+      border: 0;
+      padding: 6px 13px;
+
+      color: white;
+      background-color: rgb(254, 60, 17);
+
+      outline: 0;
+
+      &:hover {
+        opacity: 0.9;
+      }
+    }
   }
 }
