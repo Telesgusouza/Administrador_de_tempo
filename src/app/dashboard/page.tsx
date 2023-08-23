@@ -12,80 +12,41 @@ import imgExercise from "../../../public/images/icon-exercise.svg";
 import imgSocial from "../../../public/images/icon-social.svg";
 import imgSelfCare from "../../../public/images/icon-self-care.svg";
 import React, { useEffect, useState } from "react";
-import {
-  DocumentData,
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  setDoc,
-} from "firebase/firestore";
-import { auth, db } from "../api/firebase";
+import { DocumentData, doc, getDoc, setDoc } from "firebase/firestore";
 import { User, onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "../api/firebase";
+import { toast } from "react-toastify";
 
-interface IToggleCard {
-  name?: string;
-  toggle?: boolean;
-  card?: string;
-}
-
-interface IPeriod {
+interface IPeriodOption {
   current: "daily" | "weekly" | "monthly";
 }
 
-interface IMonths {
-  current:
-    | "jan"
-    | "fev"
-    | "mar"
-    | "abr"
-    | "maio"
-    | "jun"
-    | "jul"
-    | "ago"
-    | "set"
-    | "out"
-    | "nov"
-    | "dez";
-}
-
-interface IListHoursWeekly {
-  work?: number;
-  play?: number;
-  study?: number;
-  exercise?: number;
-  social?: number;
-  selfcare?: number;
+interface IToggleCard {
+  toggle?: boolean;
+  card?: string;
+  name?: string;
+  sleep?: boolean;
 }
 
 export default function dashboard() {
-  const [btnDisabled, setBtnDisabled] = useState(false);
+  const [inputValue, setInputValue] = useState<number>(0);
+  const [dataUser, setDataUser] = useState<DocumentData | null>(null);
 
-  const [periodOption, setPeriodOption] = useState<IPeriod>({
-    current: "weekly",
+  const [periodOption, setPeriodOption] = useState<IPeriodOption>({
+    current: "daily",
   });
   const [currentOptionMonth, setCurrentOptionMonth] = useState<string>("jan");
   const [currentOptionDayWeek, setCurrentOptionDayWeek] =
-    useState<string>("qui");
+    useState<string>("seg");
 
-  const [inputTime, setInputTime] = useState<string>("");
-
-  const [infoUSer, setInfoUSer] = useState<DocumentData>({});
-  const [toggleCard, setToggleCard] = useState<IToggleCard>({});
-
-  const [playCurrentValue, setplayCurrentValue] = useState("");
-  const [workCurrentValue, setworkCurrentValue] = useState("");
-  const [studyCurrentValue, setstudyCurrentValue] = useState("");
-
-  const [exerciseCurrentValue, setexerciseCurrentValue] = useState("");
-  const [socialCurrentValue, setsocialCurrentValue] = useState("");
-  const [selfcareCurrentValue, setselfcareCurrentValue] = useState("");
-
-  const [limitValue, setLimitValue] = useState<number>(8);
-  const [limit, setLimit] = useState<number>(0);
-  const [cardSleep, setCardSleep] = useState<boolean>(false);
-
-  const [listHoursWeekly, setListHoursWeekly] = useState<any>({
+  const [toggleInfoCard, setToggleInfoCard] = useState<IToggleCard>({
+    card: "",
+    name: "",
+    sleep: false,
+  });
+  const [toggleCard, setToggleCard] = useState<boolean>(false);
+  const [sleepCurrent, setSleepCurrent] = useState<number>(8);
+  const [listTask, setListTask] = useState<{ [key: string]: number }>({
     work: 0,
     play: 0,
     study: 0,
@@ -112,6 +73,7 @@ export default function dashboard() {
     "abr",
     "maio",
     "jun",
+
     "jul",
     "ago",
     "set",
@@ -119,587 +81,175 @@ export default function dashboard() {
     "nov",
     "dez",
   ];
-  const listOptions = [
-    "work",
-    "play",
-    "study",
-    "exercise",
-    "social",
-    "selfcare",
-  ];
 
   useEffect(() => {
-    async function getTimeSleep() {
-      const userUid = await getUid();
+    function getDateCurrent() {
+      const date = new Date();
+      const dayWeek = date.getDay();
+      const month = date.getMonth();
 
-      let baseUrl: string;
-
-      if (periodOption.current === "weekly") {
-        baseUrl = `data-${userUid}/${periodOption.current}/data/timesleep`;
-      } else {
-        baseUrl = `data-${userUid}/${periodOption.current}/${currentOptionDayWeek}/timesleep`;
-      }
-
-      const getSleep = await getDoc(doc(db, baseUrl));
-      if (getSleep.data()?.sleep) {
-        setLimitValue(getSleep.data()?.sleep);
-      } else {
-        setLimitValue(8);
-      }
+      setCurrentOptionMonth(months[month]);
+      setCurrentOptionDayWeek(dayOfTheWeek[2 + dayWeek]);
     }
 
-    getTimeSleep();
-  }, [periodOption, currentOptionDayWeek, currentOptionMonth, btnDisabled]);
-
-  // hours
-  useEffect(() => {
-    getDataTime();
-  }, [periodOption, currentOptionDayWeek, currentOptionMonth, btnDisabled]);
-
-  // assimilando os horarios
-  useEffect(() => {
-    async function getHoursDaily() {
-      const promises = listOptions.map(async (element) => {
-        return totalHours({ current: "daily" }, element);
-      });
-
-      await Promise.all(promises);
-
-      setListHoursWeekly((prevListHours: IListHoursWeekly) => ({
-        ...prevListHours,
-      }));
-    }
-
-    getHoursDaily();
-  }, [currentOptionDayWeek, listHoursWeekly]);
-
-  // user
-  useEffect(() => {
     async function getDataUser() {
       const uid = await getUid();
+      const urlUser = `/dataUser/${uid}`;
+      const data: DocumentData = await getDoc(doc(db, urlUser));
+      setDataUser(data.data());
+    }
 
-      const dataUser: DocumentData = await getDoc(doc(db, `/dataUser/${uid}`));
-      if (dataUser) {
-        setInfoUSer(dataUser.data());
+    async function getSleep() {
+      const uid = await getUid();
+
+      const getHours = await getDoc(doc(db, `data-${uid}/timeSleep`));
+      if (getHours.data()?.sleep) {
+        setSleepCurrent(getHours.data()?.sleep);
       }
     }
 
+    getDateCurrent();
+    getSleep();
     getDataUser();
   }, []);
 
-  // dia atual
   useEffect(() => {
-    const currentDate = new Date();
-    const getCurrentMonth = currentDate.getMonth();
-    setCurrentOptionMonth(months[getCurrentMonth]);
+    async function getDataTime() {
+      const uid = await getUid();
 
-    const getCurrentDay = currentDate.getDay();
-    setCurrentOptionDayWeek(dayOfTheWeek[getCurrentDay + 2]);
+      const list: { [key: string]: number } = { ...listTask };
+
+      const listNameTask = [
+        "work",
+        "play",
+        "study",
+        "exercise",
+        "social",
+        "selfcare",
+      ];
+
+      if (periodOption.current === "daily") {
+        console.log(currentOptionDayWeek);
+        listNameTask.forEach((element: string) => {
+          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/{element}`)).then(
+            (resp: DocumentData) => {
+              console.log(resp.data()?.time);
+              //
+              list[element] = resp.data?.time ? resp.data?.time : 0;
+            }
+          );
+        });
+      }
+
+      setListTask(list);
+    }
+
+    getDataTime();
   }, []);
 
-  async function getDataTime() {
-    const userUid = await getUid();
-
-    let limit = 0;
-
-    let valueUrl = `data-${userUid}/`;
-
-    if (periodOption.current === "daily") {
-      if (currentOptionDayWeek === "todos") {
-        valueUrl += `${periodOption.current}/all/`;
-      } else if (currentOptionDayWeek === "seg a sex") {
-        valueUrl += `${periodOption.current}/segasex/`;
-      } else {
-        valueUrl += `${periodOption.current}/${currentOptionDayWeek}/`;
-      }
-      /*
-      // await getDoc(doc(db, valueUrl + "work")).then((resp: DocumentData) => {
-      //   if (resp.data()) {
-      //     setworkCurrentValue(resp.data().time);
-      //     limit += resp.data().time;
-      //   } else {
-      //     setworkCurrentValue("");
-      //   }
-      // });
-
-      // await getDoc(doc(db, valueUrl + "play")).then((resp: DocumentData) => {
-      //   if (resp.data()) {
-      //     setplayCurrentValue(resp.data().time);
-      //     limit += resp.data().time;
-      //   } else {
-      //     setplayCurrentValue("");
-      //   }
-      // });
-
-      // await getDoc(doc(db, valueUrl + "study")).then((resp: DocumentData) => {
-      //   if (resp.data()) {
-      //     setstudyCurrentValue(resp.data().time);
-      //     limit += resp.data().time;
-      //   } else {
-      //     setstudyCurrentValue("");
-      //   }
-      // });
-
-      // await getDoc(doc(db, valueUrl + "exercise")).then(
-      //   (resp: DocumentData) => {
-      //     if (resp.data()) {
-      //       setexerciseCurrentValue(resp.data().time);
-      //       limit += resp.data().time;
-      //     } else {
-      //       setexerciseCurrentValue("");
-      //     }
-      //   }
-      // );
-
-      // await getDoc(doc(db, valueUrl + "social")).then((resp: DocumentData) => {
-      //   if (resp.data()) {
-      //     setsocialCurrentValue(resp.data().time);
-      //     limit += resp.data().time;
-      //   } else {
-      //     setsocialCurrentValue("");
-      //   }
-      // });
-
-      // await getDoc(doc(db, valueUrl + "selfcare")).then(
-      //   (resp: DocumentData) => {
-      //     if (resp.data()) {
-      //       setselfcareCurrentValue(resp.data().time);
-      //       limit += resp.data().time;
-      //     } else {
-      //       setselfcareCurrentValue("");
-      //     }
-      //   }
-      // ); */
-    } else if (periodOption.current === "weekly") {
-      console.log("Semanas");
-
-      valueUrl += `${periodOption.current}/data/`;
-
-      await getDoc(doc(db, valueUrl + "work")).then((resp: DocumentData) => {
-        if (resp.data()) {
-          setworkCurrentValue(resp.data().time);
-          limit += resp.data().time;
-        } else {
-          setworkCurrentValue("");
-        }
-      });
-
-      await getDoc(doc(db, valueUrl + "play")).then((resp: DocumentData) => {
-        if (resp.data()) {
-          setplayCurrentValue(resp.data().time);
-          limit += resp.data().time;
-        } else {
-          setplayCurrentValue("");
-        }
-      });
-
-      await getDoc(doc(db, valueUrl + "study")).then((resp: DocumentData) => {
-        if (resp.data()) {
-          setstudyCurrentValue(resp.data().time);
-          limit += resp.data().time;
-        } else {
-          setstudyCurrentValue("");
-        }
-      });
-
-      await getDoc(doc(db, valueUrl + "exercise")).then(
-        (resp: DocumentData) => {
-          if (resp.data()) {
-            setexerciseCurrentValue(resp.data().time);
-            limit += resp.data().time;
-          } else {
-            setexerciseCurrentValue("");
-          }
-        }
-      );
-
-      await getDoc(doc(db, valueUrl + "social")).then((resp: DocumentData) => {
-        if (resp.data()) {
-          setsocialCurrentValue(resp.data().time);
-          limit += resp.data().time;
-        } else {
-          setsocialCurrentValue("");
-        }
-      });
-
-      await getDoc(doc(db, valueUrl + "selfcare")).then(
-        (resp: DocumentData) => {
-          if (resp.data()) {
-            setselfcareCurrentValue(resp.data().time);
-            limit += resp.data().time;
-          } else {
-            setselfcareCurrentValue("");
-          }
-        }
-      );
-    } else if (periodOption.current === "monthly") {
-      console.log("Meses");
-    }
-
-    await getDoc(doc(db, valueUrl + "work")).then((resp: DocumentData) => {
-      if (resp.data()) {
-        setworkCurrentValue(resp.data().time);
-        limit += resp.data().time;
-      } else {
-        setworkCurrentValue("");
-      }
-    });
-
-    await getDoc(doc(db, valueUrl + "play")).then((resp: DocumentData) => {
-      if (resp.data()) {
-        setplayCurrentValue(resp.data().time);
-        limit += resp.data().time;
-      } else {
-        setplayCurrentValue("");
-      }
-    });
-
-    await getDoc(doc(db, valueUrl + "study")).then((resp: DocumentData) => {
-      if (resp.data()) {
-        setstudyCurrentValue(resp.data().time);
-        limit += resp.data().time;
-      } else {
-        setstudyCurrentValue("");
-      }
-    });
-
-    await getDoc(doc(db, valueUrl + "exercise")).then((resp: DocumentData) => {
-      if (resp.data()) {
-        setexerciseCurrentValue(resp.data().time);
-        limit += resp.data().time;
-      } else {
-        setexerciseCurrentValue("");
-      }
-    });
-
-    await getDoc(doc(db, valueUrl + "social")).then((resp: DocumentData) => {
-      if (resp.data()) {
-        setsocialCurrentValue(resp.data().time);
-        limit += resp.data().time;
-      } else {
-        setsocialCurrentValue("");
-      }
-    });
-
-    await getDoc(doc(db, valueUrl + "selfcare")).then((resp: DocumentData) => {
-      if (resp.data()) {
-        setselfcareCurrentValue(resp.data().time);
-        limit += resp.data().time;
-      } else {
-        setselfcareCurrentValue("");
-      }
-    });
-
-    limit = limit + limitValue;
-    if (periodOption.current === "daily") limit = 24 - limit;
-    if (periodOption.current === "weekly") limit = 120 - limit;
-    if (periodOption.current === "monthly") limit = 480 - limit;
-
-    setLimit(limit);
-  }
-
-  function handleCard(card: string, name: string) {
-    setToggleCard({
-      name,
-      toggle: true,
-      card: card,
-    });
-  }
-
-  function handleInputTime(e: string) {
-    if ((Number(e) <= limit && Number(e) >= 0) || e === "") {
-      setInputTime(e);
-    }
+  function handleOption(
+    month: string,
+    index: number,
+    setHook: React.Dispatch<React.SetStateAction<string>>
+  ) {
+    setHook(month);
   }
 
   function handleCloseCard() {
-    setBtnDisabled(false);
-
-    setToggleCard({});
-
-    setCardSleep(false);
-    setLimitValue(8);
+    setToggleInfoCard({ card: "", name: "" });
+    setToggleCard(false);
+    setInputValue(0);
   }
 
-  function handleOption(index: number) {
-    if (periodOption.current === "monthly") {
-      setCurrentOptionMonth(months[index]);
-      console.log("Meses ");
-    } else if (periodOption.current === "daily") {
-      setCurrentOptionDayWeek(dayOfTheWeek[index]);
+  function openCard(
+    card: string = "",
+    name: string = "",
+    sleep: boolean = false
+  ) {
+    if (sleep) {
+      setInputValue(sleepCurrent);
+    }
+    setToggleInfoCard({ card, name, sleep });
+    setToggleCard(true);
+  }
+
+  function handleInputTime(e: string) {
+    const limit = 16;
+    if ((Number(e) <= limit && Number(e) >= 0) || e === "") {
+      if (toggleInfoCard) {
+        setInputValue(Number(e));
+      }
     }
   }
 
-  function handleSleepCard() {
-    console.log("ola mundo");
+  function submitForm(e: React.ChangeEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (toggleInfoCard.sleep) {
+      handleSubmitSleep();
+    } else {
+      handelSubmitTime();
+    }
   }
 
-  function handleInputLimitSleep(e: string) {
-    const value = Number(e);
-    const limit = 16;
+  async function handleSubmitSleep() {
+    const uid = await getUid();
+    setDoc(doc(db, `data-${uid}/timeSleep`), {
+      sleep: inputValue,
+    });
+  }
 
-    const regNumber = /^[0-9]+$/;
-    if ((regNumber.test(e) || e === "") && value >= 4 && value <= limit) {
-      setLimitValue(value);
+  /*     HISTÓRICO     */
+  async function history(refDoc: string) {}
+
+  async function handelSubmitTime() {
+    const uid = await getUid();
+    // let refData = doc(db, `data-${uid}//${toggleInfoCard.card}`);
+
+    if (periodOption.current === "daily") {
+      const refData = doc(
+        db,
+        `data/${uid}/${currentOptionDayWeek}/${toggleInfoCard.card}`
+      );
+      setDoc(refData, {
+        date: new Date(),
+        time: inputValue,
+      })
+        .then(() => {
+          toast.success("Atualizado com sucesso");
+
+          /*     HISTÓRICO     */
+          setTimeout(() => {
+            handleCloseCard();
+            // mudar o valor no usestate
+          }, 700);
+        })
+        .catch((err) => {
+          console.error("Erro ao atualizar dados >>> ", err);
+          toast.error(
+            "Houve um erro ao atualizar dados, por favor tente novamente."
+          );
+        });
     }
   }
 
   async function getUid() {
-    const user = await new Promise<null | User>((result) => {
+    const user = await new Promise<User | null>((result) => {
       onAuthStateChanged(auth, (user) => {
         result(user);
       });
     });
 
-    if (user) {
+    if (user?.uid) {
       return user.uid;
     } else {
-      return new Error("Error ao buscar uid");
+      return new Error("Erro ao puxar o id do usuario ");
     }
   }
-
-  async function getHistory(url: string) {
-    const userUid = await getUid();
-    const baseUrl = `data-${userUid}/${url}`;
-    const data = await getDoc(doc(db, baseUrl));
-    // if(!!data.data()) {
-    //     await addDoc(collection(db, `data/${userUid}/history/${url}`), data);
-    // };
-  }
-
-  async function handleSubmitTime(e: React.ChangeEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setBtnDisabled(true);
-    const userUid = await getUid();
-    const baseUrl = `data-${userUid}/`;
-
-    if (periodOption.current === "daily") {
-      if (currentOptionDayWeek === "todos") {
-        const urlAll =
-          baseUrl + `${periodOption.current}/all/${toggleCard.card}`;
-        await getHistory(`${periodOption.current}/all/${toggleCard.card}`);
-
-        await setDoc(doc(db, urlAll), {
-          date: new Date(),
-          time: Number(inputTime),
-        });
-
-        const urlSegAsex =
-          baseUrl + `${periodOption.current}/segasex/${toggleCard.card}`;
-
-        await getHistory(`${periodOption.current}/segasex/${toggleCard.card}`);
-
-        await setDoc(doc(db, urlSegAsex), {
-          date: new Date(),
-          time: Number(inputTime),
-        });
-
-        for (let i = 1; i <= 7; i++) {
-          const refUrl =
-            baseUrl +
-            `${periodOption.current}/${dayOfTheWeek[1 + i]}/${toggleCard.card}`;
-
-          await getHistory(
-            `${periodOption.current}/${dayOfTheWeek[2 + i]}/${toggleCard.card}`
-          );
-
-          await setDoc(doc(db, refUrl), {
-            date: new Date(),
-            time: Number(inputTime),
-          });
-        }
-      } else if (currentOptionDayWeek === "seg a sex") {
-        const urlSegAsex =
-          baseUrl + `${periodOption.current}/segasex/${toggleCard.card}`;
-
-        await getHistory(`${periodOption.current}/segasex/${toggleCard.card}`);
-
-        await setDoc(doc(db, urlSegAsex), {
-          date: new Date(),
-          time: Number(inputTime),
-        });
-
-        for (let i = 1; i <= 5; i++) {
-          const refUrl =
-            baseUrl +
-            `${periodOption.current}/${dayOfTheWeek[2 + i]}/${toggleCard.card}`;
-
-          await getHistory(
-            `${periodOption.current}/${dayOfTheWeek[2 + i]}/${toggleCard.card}`
-          );
-
-          await setDoc(doc(db, refUrl), {
-            date: new Date(),
-            time: Number(inputTime),
-          });
-        }
-      } else {
-        await getHistory(
-          `${periodOption.current}/${currentOptionDayWeek}/${toggleCard.card}`
-        );
-        const refUrl =
-          baseUrl +
-          `${periodOption.current}/${currentOptionDayWeek}/${toggleCard.card}`;
-
-        await setDoc(doc(db, refUrl), {
-          date: new Date(),
-          time: Number(inputTime),
-        });
-      }
-
-      await matchWeekValues();
-    } else if (periodOption.current === "weekly") {
-      await getHistory(`${periodOption.current}/data/${toggleCard.card}`);
-
-      const refUrl =
-        baseUrl + `${periodOption.current}/data/${toggleCard.card}`;
-
-      await setDoc(doc(db, refUrl), {
-        date: new Date(),
-        time: Number(inputTime),
-      });
-    } else if (periodOption.current === "monthly") {
-      console.log("Meses");
-    }
-
-    setTimeout(() => {
-      handleCloseCard();
-      getDataTime();
-    }, 1000);
-  }
-
-  async function handleSubmitSleep(e: React.ChangeEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    setBtnDisabled(true);
-
-    const userUid = await getUid();
-
-    let baseUrl = `data-${userUid}/${periodOption.current}`;
-
-    if (periodOption.current === "daily")
-      baseUrl = `/${currentOptionDayWeek}/timesleep`;
-    // if (periodOption.current === "weekly") ;
-    // if (periodOption.current === "monthly") ;
-
-    await setDoc(doc(db, baseUrl), {
-      sleep: limitValue,
-    }).then(() => {});
-
-    setBtnDisabled(true);
-
-    setTimeout(() => {
-      handleCloseCard();
-    }, 1500);
-  }
-
-  // total das horas
-  async function totalHours(e: IPeriod, card: string) {
-    const userUid = await getUid();
-    let totalValue = 0;
-
-    if (e.current === "daily") {
-      for (let i = 1; i <= 7; i++) {
-        const baseUrlDaily = `data-${userUid}/daily/${
-          dayOfTheWeek[1 + i]
-        }/${card}`;
-        const dataCurrent = await getDoc(doc(db, baseUrlDaily));
-        totalValue += dataCurrent.data()?.time ? dataCurrent.data()?.time : 0;
-      }
-      listHoursWeekly[card] = totalValue;
-      setListHoursWeekly(listHoursWeekly);
-    }
-  }
-
-  /*
-  
-  aonde sendo chamado
-  useEffect(() => {
-    function getHoursDaily() {
-      listOptions.forEach(async (element) => {
-        await totalHours({ current: "daily" }, element);
-      });
-    }
-
-    getHoursDaily();
-  }, [currentOptionDayWeek, listHoursWeekly]);
-
-  
-  local aonde esta sendo atualizado
-  async function totalHours(e: IPeriod, card: string) {
-    const userUid = await getUid();
-    let totalValue = 0;
-
-    if (e.current === "daily") {
-      for (let i = 1; i <= 7; i++) {
-        const baseUrlDaily = `data-${userUid}/daily/${
-          dayOfTheWeek[1 + i]
-        }/${card}`;
-        const dataCurrent = await getDoc(doc(db, baseUrlDaily));
-        totalValue += dataCurrent.data()?.time ? dataCurrent.data()?.time : 0;
-      }
-      listHoursWeekly[card] = totalValue;
-      setListHoursWeekly(listHoursWeekly);
-    }
-  }
-
-  os componentes
-  <div className={styles.DifferentValue}>
-                {periodOption.current === "weekly" && (
-                  <>
-                    
-                    {listHoursWeekly.work === workCurrentValue && (
-                      <p>o valor esta certo</p>
-                    )}
-
-                    {listHoursWeekly.work < workCurrentValue && (
-                      <p>ultrapassa</p>
-                    )}
-
-                    {listHoursWeekly.work > workCurrentValue && (
-                      <p>o valor é menor</p>
-                    )}
-                  
-              </>
-            )}
-
-            <h2>{workCurrentValue ? workCurrentValue : 0}hrs</h2>
-          </div>
-
-  
-  */
-
-  // igualar valores com os dias
-  async function matchWeekValues() {
-    const userUid = await getUid();
-    const baseUrl = `data-${userUid}/weekly/data/${toggleCard.card}`;
-
-    const data = await getDoc(doc(db, baseUrl));
-    if (!!!data.data()) {
-      let totalValue = 0;
-
-      for (let i = 1; i <= 7; i++) {
-        const baseUrlDaily = `data-${userUid}/daily/${dayOfTheWeek[1 + i]}/${
-          toggleCard.card
-        }`;
-        const dataCurrent = await getDoc(doc(db, baseUrlDaily));
-        totalValue += dataCurrent.data()?.time ? dataCurrent.data()?.time : 0;
-      }
-
-      await setDoc(doc(db, baseUrl), {
-        date: new Date(),
-        time: totalValue,
-      });
-    }
-  }
-
-  console.log(listHoursWeekly.work === workCurrentValue);
-  console.log(workCurrentValue);
-  console.log(listHoursWeekly.work);
 
   return (
     <div className={styles.container}>
-      {toggleCard.toggle && (
+      {toggleCard && (
         <div className={styles.containerEditCard}>
           <div className={styles.containerEditBtn}>
             <button onClick={handleCloseCard}>Voltar</button>
@@ -708,25 +258,32 @@ export default function dashboard() {
           <div className={styles.containerEdit}>
             <div>
               <h3>Edite</h3>
-              <p>Edite o tempo para {toggleCard.name}</p>
+              <p>
+                Edite o tempo para{" "}
+                {toggleInfoCard.sleep ? "dormir" : <>{toggleInfoCard.name}</>}
+                {toggleInfoCard.sleep && (
+                  <>
+                    <br />
+                    recomendado de 8hr
+                  </>
+                )}
+              </p>
             </div>
 
-            <form onSubmit={handleSubmitTime}>
+            <form onSubmit={submitForm}>
               <input
                 onChange={(e) => handleInputTime(e.target.value)}
-                value={inputTime}
+                value={inputValue}
                 placeholder="Quantidade de horas"
                 type="number"
               />
 
-              <button type="submit" disabled={btnDisabled}>
-                Editar
-              </button>
+              <button type="submit">Editar</button>
             </form>
           </div>
         </div>
       )}
-
+      {/* 
       {cardSleep && (
         <div className={styles.containerEditCard}>
           <div className={styles.containerEditBtn}>
@@ -755,47 +312,47 @@ export default function dashboard() {
             </form>
           </div>
         </div>
-      )}
+      )} */}
 
       <main>
         <menu>
           <div className={styles.contentUser}>
             <Image
-              src={infoUSer.photoUser ? infoUSer.photoUser : imgNoUser}
+              src={dataUser?.photoUser ? dataUser.photoUser : imgNoUser}
               alt="avatar"
             />
             <div>
               <span>Relatório para</span>
-              <h1>{infoUSer.name}</h1>
+              <h1>{dataUser?.name}</h1>
             </div>
           </div>
           <div className={styles.containerSleep}>
-            <button onClick={() => setCardSleep(true)}>Dormir</button>
-            <strong>{limitValue}hrs de sono</strong>
-            <strong>Em torno de {limit}hrs restantes </strong>
+            <button onClick={() => openCard("", "", true)}>Dormir</button>
+            <strong>{sleepCurrent}hrs de sono</strong>
+            <strong>Em torno de 1hrs restantes </strong>
           </div>
           <ul>
             <li
+              onClick={() => setPeriodOption({ current: "daily" })}
               className={
                 periodOption.current === "daily" ? styles.selected : ""
               }
-              onClick={() => setPeriodOption({ current: "daily" })}
             >
               Diária
             </li>
             <li
+              onClick={() => setPeriodOption({ current: "weekly" })}
               className={
                 periodOption.current === "weekly" ? styles.selected : ""
               }
-              onClick={() => setPeriodOption({ current: "weekly" })}
             >
               semanalmente
             </li>
             <li
+              onClick={() => setPeriodOption({ current: "monthly" })}
               className={
                 periodOption.current === "monthly" ? styles.selected : ""
               }
-              onClick={() => setPeriodOption({ current: "monthly" })}
             >
               por mês
             </li>
@@ -804,7 +361,9 @@ export default function dashboard() {
             <ul className={styles.containerOption}>
               {dayOfTheWeek.map((month, index) => (
                 <li
-                  onClick={() => handleOption(index)}
+                  onClick={() =>
+                    handleOption(month, index, setCurrentOptionDayWeek)
+                  }
                   className={
                     currentOptionDayWeek === month ? styles.selected : ""
                   }
@@ -818,7 +377,9 @@ export default function dashboard() {
             <ul className={styles.containerOption}>
               {months.map((month, index) => (
                 <li
-                  onClick={() => handleOption(index)}
+                  onClick={() =>
+                    handleOption(month, index, setCurrentOptionMonth)
+                  }
                   className={
                     currentOptionMonth === month ? styles.selected : ""
                   }
@@ -827,13 +388,13 @@ export default function dashboard() {
                 </li>
               ))}
             </ul>
-          )}{" "}
+          )}
         </menu>
 
         <section className={styles.containerSection}>
           <article
-            onClick={() => handleCard("work", "Trabalho")}
             className={styles.secWork}
+            onClick={() => openCard("work", "trabalho")}
           >
             <Image src={imgWork} loading="lazy" alt="icon" />
             <div className={styles.contentArticle}>
@@ -847,7 +408,7 @@ export default function dashboard() {
               </div>
 
               <div className={styles.DifferentValue}>
-                {periodOption.current === "weekly" && (
+                {/* {periodOption.current === "weekly" && (
                   <>
                     {listHoursWeekly.work != 0 && (
                       <>
@@ -861,9 +422,9 @@ export default function dashboard() {
                       </>
                     )}
                   </>
-                )}
+                )} */}
 
-                <h2>{workCurrentValue ? workCurrentValue : 0}hrs</h2>
+                <h2>{listTask.work}hrs</h2>
               </div>
 
               <span>Semana passada - 5h</span>
@@ -871,8 +432,8 @@ export default function dashboard() {
           </article>
 
           <article
-            onClick={() => handleCard("play", "Jogos")}
             className={styles.secPlay}
+            onClick={() => openCard("play", "Jogos")}
           >
             <Image src={imgPlay} loading="lazy" alt="icon" />
             <div className={styles.contentArticle}>
@@ -885,15 +446,15 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{playCurrentValue ? playCurrentValue : 0}hrs</h2>
+              <h2>{listTask.play}hrs</h2>
 
               <span>Semana passada - 5h</span>
             </div>
           </article>
 
           <article
-            onClick={() => handleCard("study", "Estudos")}
             className={styles.secStudy}
+            onClick={() => openCard("study", "estudos")}
           >
             <Image src={imgStudy} loading="lazy" alt="icon" />
             <div className={styles.contentArticle}>
@@ -906,15 +467,15 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{studyCurrentValue ? studyCurrentValue : 0}hrs</h2>
+              <h2>{listTask.study}hrs</h2>
 
               <span>Semana passada - 5h</span>
             </div>
           </article>
 
           <article
-            onClick={() => handleCard("exercise", "Exercicios")}
             className={styles.secExercise}
+            onClick={() => openCard("exercise", "exercicios")}
           >
             <Image src={imgExercise} loading="lazy" alt="icon" />
             <div className={styles.contentArticle}>
@@ -927,15 +488,15 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{exerciseCurrentValue ? exerciseCurrentValue : 0}hrs</h2>
+              <h2>{listTask.exercise}hrs</h2>
 
               <span>Semana passada - 5h</span>
             </div>
           </article>
 
           <article
-            onClick={() => handleCard("social", "Social")}
             className={styles.secSocial}
+            onClick={() => openCard("social", "social")}
           >
             <Image src={imgSocial} loading="lazy" alt="icon" />
             <div className={styles.contentArticle}>
@@ -948,15 +509,15 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{socialCurrentValue ? socialCurrentValue : 0}hrs</h2>
+              <h2>{listTask.social}hrs</h2>
 
               <span>Semana passada - 5h</span>
             </div>
           </article>
 
           <article
-            onClick={() => handleCard("selfcare", "Saúde")}
             className={styles.secSelfCare}
+            onClick={() => openCard("selfcare", "sáude")}
           >
             <Image src={imgSelfCare} loading="lazy" alt="icon" />
             <div className={styles.contentArticle}>
@@ -969,7 +530,7 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{selfcareCurrentValue ? selfcareCurrentValue : 0}hrs</h2>
+              <h2>{listTask.selfcare}hrs</h2>
 
               <span>Semana passada - 5h</span>
             </div>

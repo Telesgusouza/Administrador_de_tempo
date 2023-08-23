@@ -10,6 +10,7 @@ import imgPasswordNot from "../../public/images/icon-passwordnot.svg";
 import imgPassword from "../../public/images/icon-password.svg";
 import Image from "next/image";
 import {
+  User,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -32,11 +33,24 @@ export default function Home() {
   const [togglePassword, setTogglePassword] = useState<boolean>(false);
 
   useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
+    async function getUserOn() {
+      const user = await new Promise<User | null>((result) => {
+        onAuthStateChanged(auth, (user) => {
+          result(user);
+        });
+      });
+
+      if (user?.uid) {
         window.location.replace("/dashboard");
       }
-    });
+      // onAuthStateChanged(auth, (user) => {
+      //   if (user) {
+      //     window.location.replace("/dashboard");
+      //   }
+      // });
+    }
+
+    getUserOn();
   }, []);
 
   function handleToggleForm() {
@@ -74,7 +88,31 @@ export default function Home() {
               auth,
               email,
               password
-            );
+            ).then((user) => {
+              const uid = user.user.uid;
+
+              let photoUser;
+
+              if (filePhoto) {
+                const refStorage = ref(storage, `photoUser/${uid}`);
+                uploadBytes(refStorage, filePhoto).then(() => {
+                  getDownloadURL(refStorage).then((photoUrl) => {
+                    photoUser = photoUrl;
+                  });
+                });
+              }
+
+              setDoc(doc(db, `dataUser/${uid}`), {
+                photoUser: photoUser ? photoUser : null,
+                name,
+                email,
+              }).then(() => {
+                toast.success("Conta criada com sucesso!");
+                setBtnDisabled(false);
+                window.location.replace("/dashboard");
+              });
+            });
+            /*
             const uid = createUser.user.uid;
 
             let photoUser;
@@ -95,6 +133,7 @@ export default function Home() {
               setBtnDisabled(false);
               window.location.replace("/dashboard");
             });
+            */
           } catch (err: any) {
             setBtnDisabled(false);
             console.error(err.message);
@@ -104,6 +143,7 @@ export default function Home() {
               toast.error("Conta já existe");
             }
           }
+          ////////////
         } else {
           toast.error("senha deve ter 6 caracteres ou mais");
         }

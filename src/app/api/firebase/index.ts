@@ -13,13 +13,13 @@ import { getStorage } from 'firebase/storage';
 // };
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCZdTqeqVJqeZXDD6b4dFtz5JC1gvuP4hY",
-  authDomain: "admtime-b732f.firebaseapp.com",
-  projectId: "admtime-b732f",
-  storageBucket: "admtime-b732f.appspot.com",
-  messagingSenderId: "342440013614",
-  appId: "1:342440013614:web:8400a8efe2d983489c94bf",
-  measurementId: "G-0NNKXBLSQL"
+  apiKey: "AIzaSyBGKDknVbGkHK6DxEa6KI0jpqTPbqiFk2I",
+  authDomain: "admtime-ed291.firebaseapp.com",
+  projectId: "admtime-ed291",
+  storageBucket: "admtime-ed291.appspot.com",
+  messagingSenderId: "247286085513",
+  appId: "1:247286085513:web:dc3181779eb20fd0e19358",
+  measurementId: "G-C2QCEL8SSY"
 };
 
 const firebase = initializeApp(firebaseConfig);
