@@ -12,7 +12,14 @@ import imgExercise from "../../../public/images/icon-exercise.svg";
 import imgSocial from "../../../public/images/icon-social.svg";
 import imgSelfCare from "../../../public/images/icon-self-care.svg";
 import React, { useEffect, useState } from "react";
-import { DocumentData, doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  DocumentData,
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+} from "firebase/firestore";
 import { User, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../api/firebase";
 import { toast } from "react-toastify";
@@ -33,7 +40,7 @@ export default function dashboard() {
   const [dataUser, setDataUser] = useState<DocumentData | null>(null);
 
   const [periodOption, setPeriodOption] = useState<IPeriodOption>({
-    current: "daily",
+    current: "weekly",
   });
   const [currentOptionMonth, setCurrentOptionMonth] = useState<string>("jan");
   const [currentOptionDayWeek, setCurrentOptionDayWeek] =
@@ -46,14 +53,14 @@ export default function dashboard() {
   });
   const [toggleCard, setToggleCard] = useState<boolean>(false);
   const [sleepCurrent, setSleepCurrent] = useState<number>(8);
-  const [listTask, setListTask] = useState<{ [key: string]: number }>({
-    work: 0,
-    play: 0,
-    study: 0,
-    exercise: 0,
-    social: 0,
-    selfcare: 0,
-  });
+
+  const [workValue, setWorkValue] = useState<number>(0);
+  const [playValue, setPlayValue] = useState<number>(0);
+  const [studyValue, setStudyValue] = useState<number>(0);
+
+  const [exerciseValue, setExerciseValue] = useState<number>(0);
+  const [socialValue, setSocialValue] = useState<number>(0);
+  const [selfcareValue, setSelfcareValue] = useState<number>(0);
 
   const dayOfTheWeek = [
     "todos",
@@ -117,35 +124,73 @@ export default function dashboard() {
     async function getDataTime() {
       const uid = await getUid();
 
-      const list: { [key: string]: number } = { ...listTask };
-
-      const listNameTask = [
-        "work",
-        "play",
-        "study",
-        "exercise",
-        "social",
-        "selfcare",
-      ];
-
       if (periodOption.current === "daily") {
-        console.log(currentOptionDayWeek);
-        listNameTask.forEach((element: string) => {
-          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/{element}`)).then(
-            (resp: DocumentData) => {
-              console.log(resp.data()?.time);
-              //
-              list[element] = resp.data?.time ? resp.data?.time : 0;
-            }
-          );
+        getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/work`)).then(
+          (resp) => {
+            setWorkValue(resp.data()?.time ? resp.data()?.time : 0);
+          }
+        );
+
+        getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/play`)).then(
+          (resp) => {
+            setPlayValue(resp.data()?.time ? resp.data()?.time : 0);
+          }
+        );
+
+        getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/study`)).then(
+          (resp) => {
+            setStudyValue(resp.data()?.time ? resp.data()?.time : 0);
+          }
+        );
+
+        getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/exercise`)).then(
+          (resp) => {
+            setExerciseValue(resp.data()?.time ? resp.data()?.time : 0);
+          }
+        );
+
+        getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/social`)).then(
+          (resp) => {
+            setSocialValue(resp.data()?.time ? resp.data()?.time : 0);
+          }
+        );
+
+        getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/selfcare`)).then(
+          (resp) => {
+            setSelfcareValue(resp.data()?.time ? resp.data()?.time : 0);
+          }
+        );
+      } else if (periodOption.current === "weekly") {
+        getDoc(doc(db, `data/${uid}/dataWeekly/work`)).then((resp) => {
+          setWorkValue(resp.data()?.time ? resp.data()?.time : 0);
+        });
+
+        getDoc(doc(db, `data/${uid}/dataWeekly/play`)).then((resp) => {
+          setPlayValue(resp.data()?.time ? resp.data()?.time : 0);
+        });
+
+        getDoc(doc(db, `data/${uid}/dataWeekly/study`)).then((resp) => {
+          setStudyValue(resp.data()?.time ? resp.data()?.time : 0);
+        });
+
+        getDoc(doc(db, `data/${uid}/dataWeekly/exercise`)).then((resp) => {
+          setExerciseValue(resp.data()?.time ? resp.data()?.time : 0);
+        });
+
+        getDoc(doc(db, `data/${uid}/dataWeekly/social`)).then((resp) => {
+          setSocialValue(resp.data()?.time ? resp.data()?.time : 0);
+        });
+
+        getDoc(doc(db, `data/${uid}/dataWeekly/selfcare`)).then((resp) => {
+          setSelfcareValue(resp.data()?.time ? resp.data()?.time : 0);
         });
       }
-
-      setListTask(list);
     }
 
     getDataTime();
-  }, []);
+
+    return () => {};
+  }, [currentOptionDayWeek]);
 
   function handleOption(
     month: string,
@@ -175,11 +220,27 @@ export default function dashboard() {
 
   function handleInputTime(e: string) {
     const limit = 16;
-    if ((Number(e) <= limit && Number(e) >= 0) || e === "") {
-      if (toggleInfoCard) {
-        setInputValue(Number(e));
-      }
+
+    let limitTest = 0;
+
+    if (periodOption.current === "daily") {
+      limitTest = 16;
+    } else if (periodOption.current === "monthly") {
+      // limitTest
     }
+
+    console.log(limitTest);
+
+    // if (periodOption.current === "daily") {
+    //   if ((Number(e) <= 16 && Number(e) >= 0) || e === "") {
+    //     if (toggleInfoCard) {
+    //       // voltar aqui     periodOption
+    //       setInputValue(Number(e));
+    //     }
+    //   }
+    // } else if (periodOption.current === "monthly") {
+
+    // }
   }
 
   function submitForm(e: React.ChangeEvent<HTMLFormElement>) {
@@ -192,6 +253,40 @@ export default function dashboard() {
     }
   }
 
+  function updateData(card: string, value: number) {
+    switch (card) {
+      case "work": {
+        setWorkValue(value);
+        break;
+      }
+
+      case "play": {
+        setPlayValue(value);
+        break;
+      }
+
+      case "study": {
+        setStudyValue(value);
+        break;
+      }
+
+      case "exercise": {
+        setExerciseValue(value);
+        break;
+      }
+
+      case "social": {
+        setSocialValue(value);
+        break;
+      }
+
+      case "selfcare": {
+        setSelfcareValue(value);
+        break;
+      }
+    }
+  }
+
   async function handleSubmitSleep() {
     const uid = await getUid();
     setDoc(doc(db, `data-${uid}/timeSleep`), {
@@ -199,12 +294,8 @@ export default function dashboard() {
     });
   }
 
-  /*     HISTÓRICO     */
-  async function history(refDoc: string) {}
-
   async function handelSubmitTime() {
     const uid = await getUid();
-    // let refData = doc(db, `data-${uid}//${toggleInfoCard.card}`);
 
     if (periodOption.current === "daily") {
       const refData = doc(
@@ -217,11 +308,10 @@ export default function dashboard() {
       })
         .then(() => {
           toast.success("Atualizado com sucesso");
+          updateData(String(toggleInfoCard.card), inputValue);
 
-          /*     HISTÓRICO     */
           setTimeout(() => {
             handleCloseCard();
-            // mudar o valor no usestate
           }, 700);
         })
         .catch((err) => {
@@ -230,6 +320,19 @@ export default function dashboard() {
             "Houve um erro ao atualizar dados, por favor tente novamente."
           );
         });
+    } else if (periodOption.current === "weekly") {
+      const refData = doc(db, `data/${uid}/dataWeekly/${toggleInfoCard.card}`);
+      setDoc(refData, {
+        date: new Date(),
+        time: inputValue,
+      }).then(() => {
+        toast.success("Atualizado com sucesso");
+        updateData(String(toggleInfoCard.card), inputValue);
+
+        setTimeout(() => {
+          handleCloseCard();
+        }, 700);
+      });
     }
   }
 
@@ -424,7 +527,8 @@ export default function dashboard() {
                   </>
                 )} */}
 
-                <h2>{listTask.work}hrs</h2>
+                {/* <h2>{listTask.work}hrs</h2> */}
+                <h2>{workValue}hrs</h2>
               </div>
 
               <span>Semana passada - 5h</span>
@@ -446,7 +550,7 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{listTask.play}hrs</h2>
+              <h2>{playValue}hrs</h2>
 
               <span>Semana passada - 5h</span>
             </div>
@@ -467,7 +571,7 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{listTask.study}hrs</h2>
+              <h2>{studyValue}hrs</h2>
 
               <span>Semana passada - 5h</span>
             </div>
@@ -488,7 +592,7 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{listTask.exercise}hrs</h2>
+              <h2>{exerciseValue}hrs</h2>
 
               <span>Semana passada - 5h</span>
             </div>
@@ -509,7 +613,7 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{listTask.social}hrs</h2>
+              <h2>{socialValue}hrs</h2>
 
               <span>Semana passada - 5h</span>
             </div>
@@ -530,7 +634,7 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{listTask.selfcare}hrs</h2>
+              <h2>{selfcareValue}hrs</h2>
 
               <span>Semana passada - 5h</span>
             </div>
