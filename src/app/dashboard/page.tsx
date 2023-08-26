@@ -39,8 +39,10 @@ export default function dashboard() {
   const [inputValue, setInputValue] = useState<number>(0);
   const [dataUser, setDataUser] = useState<DocumentData | null>(null);
 
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+
   const [periodOption, setPeriodOption] = useState<IPeriodOption>({
-    current: "weekly",
+    current: "daily",
   });
   const [currentOptionMonth, setCurrentOptionMonth] = useState<string>("jan");
   const [currentOptionDayWeek, setCurrentOptionDayWeek] =
@@ -57,7 +59,6 @@ export default function dashboard() {
   const [workValue, setWorkValue] = useState<number>(0);
   const [playValue, setPlayValue] = useState<number>(0);
   const [studyValue, setStudyValue] = useState<number>(0);
-
   const [exerciseValue, setExerciseValue] = useState<number>(0);
   const [socialValue, setSocialValue] = useState<number>(0);
   const [selfcareValue, setSelfcareValue] = useState<number>(0);
@@ -125,41 +126,91 @@ export default function dashboard() {
       const uid = await getUid();
 
       if (periodOption.current === "daily") {
-        getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/work`)).then(
-          (resp) => {
+        if (currentOptionDayWeek === "seg a sex") {
+          getDoc(doc(db, `data/${uid}/segasex/work`)).then((resp) => {
             setWorkValue(resp.data()?.time ? resp.data()?.time : 0);
-          }
-        );
+          });
 
-        getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/play`)).then(
-          (resp) => {
+          getDoc(doc(db, `data/${uid}/segasex/play`)).then((resp) => {
             setPlayValue(resp.data()?.time ? resp.data()?.time : 0);
-          }
-        );
+          });
 
-        getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/study`)).then(
-          (resp) => {
+          getDoc(doc(db, `data/${uid}/segasex/study`)).then((resp) => {
             setStudyValue(resp.data()?.time ? resp.data()?.time : 0);
-          }
-        );
+          });
 
-        getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/exercise`)).then(
-          (resp) => {
+          getDoc(doc(db, `data/${uid}/segasex/exercise`)).then((resp) => {
             setExerciseValue(resp.data()?.time ? resp.data()?.time : 0);
-          }
-        );
+          });
 
-        getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/social`)).then(
-          (resp) => {
+          getDoc(doc(db, `data/${uid}/segasex/social`)).then((resp) => {
             setSocialValue(resp.data()?.time ? resp.data()?.time : 0);
-          }
-        );
+          });
 
-        getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/selfcare`)).then(
-          (resp) => {
+          getDoc(doc(db, `data/${uid}/segasex/selfcare`)).then((resp) => {
             setSelfcareValue(resp.data()?.time ? resp.data()?.time : 0);
-          }
-        );
+          });
+        } else if (currentOptionDayWeek === "todos") {
+          getDoc(doc(db, `data/${uid}/all/work`)).then((resp) => {
+            setWorkValue(resp.data()?.time ? resp.data()?.time : 0);
+          });
+
+          getDoc(doc(db, `data/${uid}/all/play`)).then((resp) => {
+            setPlayValue(resp.data()?.time ? resp.data()?.time : 0);
+          });
+
+          getDoc(doc(db, `data/${uid}/all/study`)).then((resp) => {
+            setStudyValue(resp.data()?.time ? resp.data()?.time : 0);
+          });
+
+          getDoc(doc(db, `data/${uid}/all/exercise`)).then((resp) => {
+            setExerciseValue(resp.data()?.time ? resp.data()?.time : 0);
+          });
+
+          getDoc(doc(db, `data/${uid}/all/social`)).then((resp) => {
+            setSocialValue(resp.data()?.time ? resp.data()?.time : 0);
+          });
+
+          getDoc(doc(db, `data/${uid}/all/selfcare`)).then((resp) => {
+            setSelfcareValue(resp.data()?.time ? resp.data()?.time : 0);
+          });
+        } else {
+          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/work`)).then(
+            (resp) => {
+              setWorkValue(resp.data()?.time ? resp.data()?.time : 0);
+            }
+          );
+
+          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/play`)).then(
+            (resp) => {
+              setPlayValue(resp.data()?.time ? resp.data()?.time : 0);
+            }
+          );
+
+          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/study`)).then(
+            (resp) => {
+              setStudyValue(resp.data()?.time ? resp.data()?.time : 0);
+            }
+          );
+
+          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/exercise`)).then(
+            (resp) => {
+              setExerciseValue(resp.data()?.time ? resp.data()?.time : 0);
+            }
+          );
+
+          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/social`)).then(
+            (resp) => {
+              setSocialValue(resp.data()?.time ? resp.data()?.time : 0);
+            }
+          );
+
+          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/selfcare`)).then(
+            (resp) => {
+              setSelfcareValue(resp.data()?.time ? resp.data()?.time : 0);
+            }
+          );
+        }
       } else if (periodOption.current === "weekly") {
         getDoc(doc(db, `data/${uid}/dataWeekly/work`)).then((resp) => {
           setWorkValue(resp.data()?.time ? resp.data()?.time : 0);
@@ -192,6 +243,26 @@ export default function dashboard() {
     return () => {};
   }, [currentOptionDayWeek]);
 
+  useEffect(() => {
+    let limit: number;
+
+    if (periodOption.current === "daily") {
+      const sumOfValue =
+        workValue +
+        playValue +
+        studyValue +
+        exerciseValue +
+        socialValue +
+        selfcareValue;
+      limit = 24 - (sleepCurrent + sumOfValue);
+      setTimeLeft(limit);
+    } else if (periodOption.current === "monthly") {
+      // limitTest
+    }
+
+    return () => {};
+  });
+
   function handleOption(
     month: string,
     index: number,
@@ -218,29 +289,52 @@ export default function dashboard() {
     setToggleCard(true);
   }
 
-  function handleInputTime(e: string) {
-    const limit = 16;
+  function getCurrentValue() {
+    switch (toggleInfoCard.card) {
+      case "work": {
+        return workValue;
+      }
 
-    let limitTest = 0;
+      case "play": {
+        return playValue;
+      }
 
-    if (periodOption.current === "daily") {
-      limitTest = 16;
-    } else if (periodOption.current === "monthly") {
-      // limitTest
+      case "study": {
+        return studyValue;
+      }
+
+      case "exercise": {
+        return exerciseValue;
+      }
+
+      case "social": {
+        return socialValue;
+      }
+
+      case "selfcare": {
+        return selfcareValue;
+      }
     }
+  }
 
-    console.log(limitTest);
+  function handleInputTime(e: string) {
+    if (periodOption.current === "daily") {
+      const taskCurrentValue = getCurrentValue();
+      console.log(taskCurrentValue);
 
-    // if (periodOption.current === "daily") {
-    //   if ((Number(e) <= 16 && Number(e) >= 0) || e === "") {
-    //     if (toggleInfoCard) {
-    //       // voltar aqui     periodOption
-    //       setInputValue(Number(e));
-    //     }
-    //   }
-    // } else if (periodOption.current === "monthly") {
+      /*
+      
+      voltar aqui
+      
+      */
 
-    // }
+      if ((Number(e) <= timeLeft && Number(e) >= 0) || e === "") {
+        if (toggleInfoCard) {
+          setInputValue(Number(e));
+        }
+      }
+    } else if (periodOption.current === "monthly") {
+    }
   }
 
   function submitForm(e: React.ChangeEvent<HTMLFormElement>) {
@@ -298,28 +392,97 @@ export default function dashboard() {
     const uid = await getUid();
 
     if (periodOption.current === "daily") {
-      const refData = doc(
-        db,
-        `data/${uid}/${currentOptionDayWeek}/${toggleInfoCard.card}`
-      );
-      setDoc(refData, {
-        date: new Date(),
-        time: inputValue,
-      })
-        .then(() => {
-          toast.success("Atualizado com sucesso");
+      if (currentOptionDayWeek === "seg a sex") {
+        try {
+          await setDoc(doc(db, `data/${uid}/segasex/${toggleInfoCard.card}`), {
+            date: new Date(),
+            time: inputValue,
+          });
+
+          for (let i = 1; i <= 5; i++) {
+            const refData = doc(
+              db,
+              `data/${uid}/${dayOfTheWeek[2 + i]}/${toggleInfoCard.card}`
+            );
+            await setDoc(refData, {
+              date: new Date(),
+              time: inputValue,
+            }).catch((err) => {
+              console.error("Erro ao atualizar dados ", err);
+            });
+          }
+
           updateData(String(toggleInfoCard.card), inputValue);
 
           setTimeout(() => {
             handleCloseCard();
           }, 700);
+        } catch (err) {
+          console.error("Erro ao atualizar dados ", err);
+          toast.error("Ocorreu um erro ao atualizar dados de segunda a sexta.");
+        }
+      } else if (currentOptionDayWeek === "todos") {
+        try {
+          await setDoc(doc(db, `data/${uid}/all/${toggleInfoCard.card}`), {
+            date: new Date(),
+            time: inputValue,
+          }).catch((err) => {
+            console.error("Erro ao atualizar dados ", err);
+          });
+
+          await setDoc(doc(db, `data/${uid}/segasex/${toggleInfoCard.card}`), {
+            date: new Date(),
+            time: inputValue,
+          }).catch((err) => {
+            console.error("Erro ao atualizar dados ", err);
+          });
+
+          for (let i = 1; i <= 7; i++) {
+            const refData = doc(
+              db,
+              `data/${uid}/${dayOfTheWeek[1 + i]}/${toggleInfoCard.card}`
+            );
+            await setDoc(refData, {
+              date: new Date(),
+              time: inputValue,
+            }).catch((err) => {
+              console.error("Erro ao atualizar dados ", err);
+            });
+          }
+
+          updateData(String(toggleInfoCard.card), inputValue);
+
+          setTimeout(() => {
+            handleCloseCard();
+          }, 700);
+        } catch (err) {
+          console.error("Erro ao atualizar dados ", err);
+          toast.error("Ocorreu um erro ao atualizar todos os dados.");
+        }
+      } else {
+        const refData = doc(
+          db,
+          `data/${uid}/${currentOptionDayWeek}/${toggleInfoCard.card}`
+        );
+        setDoc(refData, {
+          date: new Date(),
+          time: inputValue,
         })
-        .catch((err) => {
-          console.error("Erro ao atualizar dados >>> ", err);
-          toast.error(
-            "Houve um erro ao atualizar dados, por favor tente novamente."
-          );
-        });
+          .then(() => {
+            toast.success("Atualizado com sucesso");
+            updateData(String(toggleInfoCard.card), inputValue);
+
+            setTimeout(() => {
+              handleCloseCard();
+            }, 700);
+          })
+          .catch((err) => {
+            console.error("Erro ao atualizar dados >>> ", err);
+            toast.error(
+              "Houve um erro ao atualizar dados, por favor tente novamente."
+            );
+          });
+      }
     } else if (periodOption.current === "weekly") {
       const refData = doc(db, `data/${uid}/dataWeekly/${toggleInfoCard.card}`);
       setDoc(refData, {
@@ -368,6 +531,11 @@ export default function dashboard() {
                   <>
                     <br />
                     recomendado de 8hr
+                  </>
+                )}
+                {!toggleInfoCard.sleep && (
+                  <>
+                    <br /> tempo restante {timeLeft}hrs
                   </>
                 )}
               </p>
@@ -432,7 +600,7 @@ export default function dashboard() {
           <div className={styles.containerSleep}>
             <button onClick={() => openCard("", "", true)}>Dormir</button>
             <strong>{sleepCurrent}hrs de sono</strong>
-            <strong>Em torno de 1hrs restantes </strong>
+            <strong>Em torno de {timeLeft}hrs restantes </strong>
           </div>
           <ul>
             <li
