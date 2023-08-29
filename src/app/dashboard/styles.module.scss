@@ -112,10 +112,10 @@
     color: white;
     background-color: #5746ea;
 
-    transition: opacity .12s ease;
+    transition: opacity 0.12s ease;
 
     &:hover {
-      opacity: .8;
+      opacity: 0.8;
     }
   }
 
@@ -192,21 +192,17 @@
   }
 }
 
-
-
-
 .DifferentValue {
   margin-top: 10px;
   display: flex;
   flex-direction: column !important;
 
   p {
-    font-size: .75rem;
+    font-size: 0.75rem;
     font-weight: 500;
   }
 
   .above {
-    // color: rgb(255, 32, 32);
     color: rgb(255, 99, 99);
   }
 
@@ -215,9 +211,87 @@
   }
 }
 
+.valueShouldBe {
+  font-size: 0.6rem;
+}
 
+.toggleMessage {
+  padding: 0 20px;
+  margin: 15px 0 15px 0;
+  display: flex;
+  flex-direction: column;
 
+  position: relative;
 
+  p {
+    width: 100%;
+
+    font-size: 0.9rem;
+    font-weight: 300;
+    white-space: pre-wrap;
+  }
+
+  @media (max-width: 860px) {
+    padding: 0 30px;
+  }
+}
+
+.inputSwitch {
+  position: relative;
+  z-index: 5;
+
+  width: 45px;
+  height: 16px;
+
+  margin-top: 6px;
+  border-radius: 20px;
+
+  background-color: hsl(227, 25%, 32%);
+
+  div {
+    position: absolute;
+
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+
+    background-color: hsl(236, 100%, 87%);
+
+    transition: all 0.2s ease;
+  }
+
+  .switchRight {
+    transition: all 0.2s ease;
+
+    top: 2px;
+    left: 3px;
+  }
+
+  .switchLeft {
+    transition: all 0.2s ease;
+
+    top: 2px;
+    right: 3px;
+  }
+
+  input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 7;
+
+    width: 100%;
+    height: 100%;
+
+    opacity: 0;
+
+    cursor: pointer;
+  }
+
+  input:checked > div {
+    background-color: black;
+  }
+}
 
 .containerSection {
   width: 100%;
@@ -415,7 +489,7 @@
 
       &:disabled {
         cursor: not-allowed;
-        opacity: .7;
+        opacity: 0.7;
       }
     }
   }

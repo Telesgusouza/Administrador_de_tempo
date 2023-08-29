@@ -18,6 +18,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   setDoc,
 } from "firebase/firestore";
 import { User, onAuthStateChanged } from "firebase/auth";
@@ -42,7 +43,7 @@ export default function dashboard() {
   const [timeLeft, setTimeLeft] = useState<number>(0);
 
   const [periodOption, setPeriodOption] = useState<IPeriodOption>({
-    current: "daily",
+    current: "monthly",
   });
   const [currentOptionMonth, setCurrentOptionMonth] = useState<string>("jan");
   const [currentOptionDayWeek, setCurrentOptionDayWeek] =
@@ -54,6 +55,7 @@ export default function dashboard() {
     sleep: false,
   });
   const [toggleCard, setToggleCard] = useState<boolean>(false);
+  const [inputSwitch, setInputSwitch] = useState<boolean>(false);
   const [sleepCurrent, setSleepCurrent] = useState<number>(8);
 
   const [workValue, setWorkValue] = useState<number>(0);
@@ -62,6 +64,18 @@ export default function dashboard() {
   const [exerciseValue, setExerciseValue] = useState<number>(0);
   const [socialValue, setSocialValue] = useState<number>(0);
   const [selfcareValue, setSelfcareValue] = useState<number>(0);
+
+  const [shouldWork, setShouldWork] = useState<number>(0);
+  const [shouldPlay, setShouldPlay] = useState<number>(0);
+  const [shouldStudy, setShouldStudy] = useState<number>(0);
+  const [shouldExercise, setShouldExercise] = useState<number>(0);
+  const [shouldSocial, setShouldSocial] = useState<number>(0);
+  const [shouldSelfcare, setShouldSelfcare] = useState<number>(0);
+
+  const [showShouldValue, setShowShouldValue] = useState<{
+    value: number;
+    toggle: boolean;
+  }>({ value: 0, toggle: false });
 
   const dayOfTheWeek = [
     "todos",
@@ -100,6 +114,87 @@ export default function dashboard() {
       setCurrentOptionDayWeek(dayOfTheWeek[2 + dayWeek]);
     }
 
+    async function handleData() {
+      const uid = await getUid();
+      const baseUrl = `data/${uid}/dataWeekly`;
+      const baseUrlMonth = `/data/${uid}/${currentOptionMonth}`;
+
+      // /*     Monthly      */
+      if (periodOption.current === "weekly") {
+        getDoc(doc(db, baseUrl + "/work")).then((resp) => {
+          if (!resp.data()) {
+            handleHittingDice(baseUrl + "/work", "work", String(uid));
+          } else {
+            rightAmount(setShouldWork, "work", String(uid));
+          }
+        });
+
+        getDoc(doc(db, baseUrl + "/play")).then((resp) => {
+          if (!resp.data()) {
+            handleHittingDice(baseUrl + "/play", "play", String(uid));
+          } else {
+            rightAmount(setShouldPlay, "play", String(uid));
+          }
+        });
+
+        getDoc(doc(db, baseUrl + "/study")).then((resp) => {
+          if (!resp.data()) {
+            handleHittingDice(baseUrl + "/study", "study", String(uid));
+          } else {
+            rightAmount(setShouldStudy, "study", String(uid));
+          }
+        });
+
+        getDoc(doc(db, baseUrl + "/exercise")).then((resp) => {
+          if (!resp.data()) {
+            handleHittingDice(baseUrl + "/exercise", "exercise", String(uid));
+          } else {
+            rightAmount(setShouldExercise, "exercise", String(uid));
+          }
+        });
+
+        getDoc(doc(db, baseUrl + "/social")).then((resp) => {
+          if (!resp.data()) {
+            handleHittingDice(baseUrl + "/social", "social", String(uid));
+          } else {
+            rightAmount(setShouldSocial, "social", String(uid));
+          }
+        });
+
+        getDoc(doc(db, baseUrl + "/selfcare")).then((resp) => {
+          if (!resp.data()) {
+            handleHittingDice(baseUrl + "/selfcare", "selfcare", String(uid));
+          } else {
+            rightAmount(setShouldSelfcare, "selfcare", String(uid));
+          }
+        });
+      } else if (periodOption.current === "monthly") {
+        getDoc(doc(db, baseUrlMonth + "/work")).then((resp) => {
+          rightAmount(setShouldWork, "work", String(uid));
+        });
+
+        getDoc(doc(db, baseUrlMonth + "/play")).then((resp) => {
+          rightAmount(setShouldPlay, "play", String(uid));
+        });
+
+        getDoc(doc(db, baseUrlMonth + "/study")).then((resp) => {
+          rightAmount(setShouldStudy, "study", String(uid));
+        });
+
+        getDoc(doc(db, baseUrlMonth + "/exercise")).then((resp) => {
+          rightAmount(setShouldExercise, "exercise", String(uid));
+        });
+
+        getDoc(doc(db, baseUrlMonth + "/social")).then((resp) => {
+          rightAmount(setShouldSocial, "social", String(uid));
+        });
+
+        getDoc(doc(db, baseUrlMonth + "/selfcare")).then((resp) => {
+          rightAmount(setShouldSelfcare, "selfcare", String(uid));
+        });
+      }
+    }
+
     async function getDataUser() {
       const uid = await getUid();
       const urlUser = `/dataUser/${uid}`;
@@ -119,12 +214,17 @@ export default function dashboard() {
     getDateCurrent();
     getSleep();
     getDataUser();
+
+    handleData();
   }, []);
 
   useEffect(() => {
     async function getDataTime() {
       const uid = await getUid();
 
+      clearValue();
+
+      /*       VOLTAR AQUI        */
       if (periodOption.current === "daily") {
         if (currentOptionDayWeek === "seg a sex") {
           getDoc(doc(db, `data/${uid}/segasex/work`)).then((resp) => {
@@ -235,13 +335,22 @@ export default function dashboard() {
         getDoc(doc(db, `data/${uid}/dataWeekly/selfcare`)).then((resp) => {
           setSelfcareValue(resp.data()?.time ? resp.data()?.time : 0);
         });
+      } else if (periodOption.current === "monthly") {
+        getDocs(collection(db, `data/${uid}/${currentOptionMonth}`)).then(
+          (resp) => {
+            resp.docChanges().forEach((element) => {
+              const task = element.doc.id;
+              handleSetTask(task, element.doc.data().time);
+            });
+          }
+        );
       }
     }
 
     getDataTime();
 
     return () => {};
-  }, [currentOptionDayWeek]);
+  }, [currentOptionDayWeek, currentOptionMonth, periodOption]);
 
   useEffect(() => {
     let limit: number;
@@ -256,12 +365,112 @@ export default function dashboard() {
         selfcareValue;
       limit = 24 - (sleepCurrent + sumOfValue);
       setTimeLeft(limit);
+    } else if (periodOption.current === "weekly") {
+      const sumOfValue =
+        workValue +
+        playValue +
+        studyValue +
+        exerciseValue +
+        socialValue +
+        selfcareValue;
+      limit = 168 - (sleepCurrent * 7 + sumOfValue);
+      setTimeLeft(limit);
     } else if (periodOption.current === "monthly") {
-      // limitTest
+      const sumOfValue =
+        workValue +
+        playValue +
+        studyValue +
+        exerciseValue +
+        socialValue +
+        selfcareValue;
+      limit = 672 - (sleepCurrent * 28 + sumOfValue);
+      setTimeLeft(limit);
     }
 
     return () => {};
   });
+
+  function clearValue() {
+    setWorkValue(0);
+    setPlayValue(0);
+    setStudyValue(0);
+
+    setExerciseValue(0);
+    setSocialValue(0);
+    setSelfcareValue(0);
+  }
+
+  function handleSetTask(task: string, data: number) {
+    switch (task) {
+      case "work": {
+        setWorkValue(data);
+        break;
+      }
+
+      case "play": {
+        setPlayValue(data);
+        break;
+      }
+
+      case "study": {
+        setStudyValue(data);
+        break;
+      }
+
+      case "exercise": {
+        setExerciseValue(data);
+        break;
+      }
+
+      case "social": {
+        setSocialValue(data);
+        break;
+      }
+
+      case "selfcare": {
+        setSelfcareValue(data);
+        break;
+      }
+    }
+  }
+
+  async function rightAmount(setHook: any, urlTask: string, uid: string) {
+    // voltar aqui
+    let totalHours = 0;
+    for (let i = 1; i <= 7; i++) {
+      const data = await getDoc(
+        doc(db, `/data/${uid}/${dayOfTheWeek[1 + i]}/${urlTask}`)
+      );
+      if (data.data()) {
+        totalHours += data.data()?.time;
+      }
+    }
+
+    /// voltar aqui
+    if (periodOption.current === "weekly") {
+      setHook(totalHours);
+    } else if (periodOption.current === "monthly") {
+      setHook(4 * totalHours);
+    }
+  }
+
+  async function handleHittingDice(url: string, urlTask: string, uid: string) {
+    // dayOfTheWeek
+    let totalHours = 0;
+    for (let i = 1; i <= 7; i++) {
+      const data = await getDoc(
+        doc(db, `/data/${uid}/${dayOfTheWeek[1 + i]}/${urlTask}`)
+      );
+      if (data.data()) {
+        totalHours += data.data()?.time;
+      }
+    }
+
+    setDoc(doc(db, url), {
+      date: new Date(),
+      time: totalHours,
+    });
+  }
 
   function handleOption(
     month: string,
@@ -275,16 +484,29 @@ export default function dashboard() {
     setToggleInfoCard({ card: "", name: "" });
     setToggleCard(false);
     setInputValue(0);
+    setShowShouldValue({ value: 0, toggle: false });
   }
 
   function openCard(
     card: string = "",
     name: string = "",
-    sleep: boolean = false
+    sleep: boolean = false,
+    value: number = 0,
+    shoudvalue: number = 0
   ) {
     if (sleep) {
       setInputValue(sleepCurrent);
+    } else {
+      setInputValue(value);
     }
+
+    if (shoudvalue != value) {
+      setShowShouldValue({ value: shoudvalue, toggle: true });
+    } else {
+      setShowShouldValue({ value: 0, toggle: false });
+    }
+
+    // setShowShouldValue();
     setToggleInfoCard({ card, name, sleep });
     setToggleCard(true);
   }
@@ -320,20 +542,41 @@ export default function dashboard() {
   function handleInputTime(e: string) {
     if (periodOption.current === "daily") {
       const taskCurrentValue = getCurrentValue();
-      console.log(taskCurrentValue);
 
-      /*
-      
-      voltar aqui
-      
-      */
+      if (
+        (Number(e) <= timeLeft + Number(taskCurrentValue) && Number(e) >= 0) ||
+        e === ""
+      ) {
+        if (toggleInfoCard) {
+          setInputValue(Number(e));
+        }
+      }
+    } else if (periodOption.current === "weekly") {
+      const taskCurrentValue = getCurrentValue();
 
-      if ((Number(e) <= timeLeft && Number(e) >= 0) || e === "") {
+      if (
+        (Number(e) <= timeLeft + Number(taskCurrentValue) && Number(e) >= 0) ||
+        e === ""
+      ) {
         if (toggleInfoCard) {
           setInputValue(Number(e));
         }
       }
     } else if (periodOption.current === "monthly") {
+      const taskCurrentValue = getCurrentValue();
+
+      if (
+        (Number(e) <= timeLeft + Number(taskCurrentValue) && Number(e) >= 0) ||
+        e === ""
+      ) {
+        if (toggleInfoCard) {
+          setInputValue(Number(e));
+
+          console.log(timeLeft);
+        }
+      }
+
+      setInputValue(Number(e));
     }
   }
 
@@ -492,6 +735,134 @@ export default function dashboard() {
         toast.success("Atualizado com sucesso");
         updateData(String(toggleInfoCard.card), inputValue);
 
+        switch (toggleInfoCard.card) {
+          case "work": {
+            rightAmount(
+              setShouldWork,
+              String(toggleInfoCard.card),
+              String(uid)
+            );
+            break;
+          }
+
+          case "play": {
+            rightAmount(
+              setShouldPlay,
+              String(toggleInfoCard.card),
+              String(uid)
+            );
+            break;
+          }
+
+          case "study": {
+            rightAmount(
+              setShouldStudy,
+              String(toggleInfoCard.card),
+              String(uid)
+            );
+            break;
+          }
+
+          case "exercise": {
+            rightAmount(
+              setShouldExercise,
+              String(toggleInfoCard.card),
+              String(uid)
+            );
+            break;
+          }
+
+          case "social": {
+            rightAmount(
+              setShouldSocial,
+              String(toggleInfoCard.card),
+              String(uid)
+            );
+            break;
+          }
+
+          case "selfcare": {
+            rightAmount(
+              setShouldSelfcare,
+              String(toggleInfoCard.card),
+              String(uid)
+            );
+            break;
+          }
+        }
+
+        setTimeout(() => {
+          handleCloseCard();
+        }, 700);
+      });
+    } else if (periodOption.current === "monthly") {
+      const refData = doc(
+        db,
+        `data/${uid}/${currentOptionMonth}/${toggleInfoCard.card}`
+      );
+      setDoc(refData, {
+        date: new Date(),
+        time: inputValue,
+      }).then(() => {
+        toast.success("Atualizado com sucesso");
+        updateData(String(toggleInfoCard.card), inputValue);
+
+        switch (toggleInfoCard.card) {
+          case "work": {
+            rightAmount(
+              setShouldWork,
+              String(toggleInfoCard.card),
+              String(uid)
+            );
+            break;
+          }
+
+          case "play": {
+            rightAmount(
+              setShouldPlay,
+              String(toggleInfoCard.card),
+              String(uid)
+            );
+            break;
+          }
+
+          case "study": {
+            rightAmount(
+              setShouldStudy,
+              String(toggleInfoCard.card),
+              String(uid)
+            );
+            break;
+          }
+
+          case "exercise": {
+            rightAmount(
+              setShouldExercise,
+              String(toggleInfoCard.card),
+              String(uid)
+            );
+            break;
+          }
+
+          case "social": {
+            rightAmount(
+              setShouldSocial,
+              String(toggleInfoCard.card),
+              String(uid)
+            );
+            break;
+          }
+
+          case "selfcare": {
+            rightAmount(
+              setShouldSelfcare,
+              String(toggleInfoCard.card),
+              String(uid)
+            );
+            break;
+          }
+        }
+
         setTimeout(() => {
           handleCloseCard();
         }, 700);
@@ -539,6 +910,13 @@ export default function dashboard() {
                   </>
                 )}
               </p>
+              {(periodOption.current === "weekly" ||
+                periodOption.current === "monthly") &&
+                showShouldValue.toggle && (
+                  <p className={styles.valueShouldBe}>
+                    o Valor deveria ser {showShouldValue.value}
+                  </p>
+                )}
             </div>
 
             <form onSubmit={submitForm}>
@@ -554,36 +932,6 @@ export default function dashboard() {
           </div>
         </div>
       )}
-      {/* 
-      {cardSleep && (
-        <div className={styles.containerEditCard}>
-          <div className={styles.containerEditBtn}>
-            <button onClick={handleCloseCard}>Voltar</button>
-          </div>
-
-          <div className={styles.containerEdit}>
-            <div>
-              <h3>Edite</h3>
-              <p>
-                Edite o tempo para dormir <br /> O recomendado no minimo 7h
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmitSleep}>
-              <input
-                type="number"
-                onChange={(e) => handleInputLimitSleep(e.target.value)}
-                value={limitValue}
-                placeholder="Horas para dormir"
-              />
-
-              <button type="submit" disabled={btnDisabled}>
-                Editar
-              </button>
-            </form>
-          </div>
-        </div>
-      )} */}
 
       <main>
         <menu>
@@ -601,6 +949,27 @@ export default function dashboard() {
             <button onClick={() => openCard("", "", true)}>Dormir</button>
             <strong>{sleepCurrent}hrs de sono</strong>
             <strong>Em torno de {timeLeft}hrs restantes </strong>
+          </div>
+          <div className={styles.toggleMessage}>
+            {(periodOption.current === "weekly" ||
+              periodOption.current === "monthly") && (
+              <>
+                <p>desativar mensagem no card</p>{" "}
+                <div className={styles.inputSwitch}>
+                  {" "}
+                  <div
+                    className={
+                      inputSwitch ? styles.switchLeft : styles.switchRight
+                    }
+                  />{" "}
+                  <input
+                    type="checkbox"
+                    checked={inputSwitch}
+                    onClick={() => setInputSwitch((p) => !p)}
+                  />{" "}
+                </div>{" "}
+              </>
+            )}
           </div>
           <ul>
             <li
@@ -665,7 +1034,9 @@ export default function dashboard() {
         <section className={styles.containerSection}>
           <article
             className={styles.secWork}
-            onClick={() => openCard("work", "trabalho")}
+            onClick={() =>
+              openCard("work", "trabalho", false, workValue, shouldWork)
+            }
           >
             <Image src={imgWork} loading="lazy" alt="icon" />
             <div className={styles.contentArticle}>
@@ -679,23 +1050,19 @@ export default function dashboard() {
               </div>
 
               <div className={styles.DifferentValue}>
-                {/* {periodOption.current === "weekly" && (
-                  <>
-                    {listHoursWeekly.work != 0 && (
-                      <>
-                        {listHoursWeekly.work < workCurrentValue && (
-                          <p className={styles.above}>valor ultrapassa</p>
-                        )}
+                {(periodOption.current === "weekly" ||
+                  periodOption.current === "monthly") &&
+                  inputSwitch && (
+                    <>
+                      {shouldWork < workValue && (
+                        <p className={styles.above}>valor ultrapassa</p>
+                      )}{" "}
+                      {shouldWork > workValue && (
+                        <p className={styles.below}>o valor está menor</p>
+                      )}{" "}
+                    </>
+                  )}
 
-                        {listHoursWeekly.work > workCurrentValue && (
-                          <p className={styles.below}>o valor é menor</p>
-                        )}
-                      </>
-                    )}
-                  </>
-                )} */}
-
-                {/* <h2>{listTask.work}hrs</h2> */}
                 <h2>{workValue}hrs</h2>
               </div>
 
@@ -705,7 +1072,9 @@ export default function dashboard() {
 
           <article
             className={styles.secPlay}
-            onClick={() => openCard("play", "Jogos")}
+            onClick={() =>
+              openCard("play", "Jogos", false, playValue, shouldPlay)
+            }
           >
             <Image src={imgPlay} loading="lazy" alt="icon" />
             <div className={styles.contentArticle}>
@@ -718,7 +1087,22 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{playValue}hrs</h2>
+              <div className={styles.DifferentValue}>
+                {(periodOption.current === "weekly" ||
+                  periodOption.current === "monthly") &&
+                  inputSwitch && (
+                    <>
+                      {shouldPlay < playValue && (
+                        <p className={styles.above}>valor ultrapassa</p>
+                      )}{" "}
+                      {shouldPlay > playValue && (
+                        <p className={styles.below}>o valor está menor</p>
+                      )}{" "}
+                    </>
+                  )}
+
+                <h2>{playValue}hrs</h2>
+              </div>
 
               <span>Semana passada - 5h</span>
             </div>
@@ -726,7 +1110,9 @@ export default function dashboard() {
 
           <article
             className={styles.secStudy}
-            onClick={() => openCard("study", "estudos")}
+            onClick={() =>
+              openCard("study", "estudos", false, studyValue, shouldStudy)
+            }
           >
             <Image src={imgStudy} loading="lazy" alt="icon" />
             <div className={styles.contentArticle}>
@@ -739,7 +1125,22 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{studyValue}hrs</h2>
+              <div className={styles.DifferentValue}>
+                {(periodOption.current === "weekly" ||
+                  periodOption.current === "monthly") &&
+                  inputSwitch && (
+                    <>
+                      {shouldStudy < studyValue && (
+                        <p className={styles.above}>valor ultrapassa</p>
+                      )}{" "}
+                      {shouldStudy > studyValue && (
+                        <p className={styles.below}>o valor está menor</p>
+                      )}{" "}
+                    </>
+                  )}
+
+                <h2>{studyValue}hrs</h2>
+              </div>
 
               <span>Semana passada - 5h</span>
             </div>
@@ -747,7 +1148,15 @@ export default function dashboard() {
 
           <article
             className={styles.secExercise}
-            onClick={() => openCard("exercise", "exercicios")}
+            onClick={() =>
+              openCard(
+                "exercise",
+                "exercicios",
+                false,
+                exerciseValue,
+                shouldExercise
+              )
+            }
           >
             <Image src={imgExercise} loading="lazy" alt="icon" />
             <div className={styles.contentArticle}>
@@ -760,7 +1169,22 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{exerciseValue}hrs</h2>
+              <div className={styles.DifferentValue}>
+                {(periodOption.current === "weekly" ||
+                  periodOption.current === "monthly") &&
+                  inputSwitch && (
+                    <>
+                      {shouldExercise < exerciseValue && (
+                        <p className={styles.above}>valor ultrapassa</p>
+                      )}{" "}
+                      {shouldExercise > exerciseValue && (
+                        <p className={styles.below}>o valor está menor</p>
+                      )}{" "}
+                    </>
+                  )}
+
+                <h2>{exerciseValue}hrs</h2>
+              </div>
 
               <span>Semana passada - 5h</span>
             </div>
@@ -768,7 +1192,9 @@ export default function dashboard() {
 
           <article
             className={styles.secSocial}
-            onClick={() => openCard("social", "social")}
+            onClick={() =>
+              openCard("social", "social", false, socialValue, shouldSocial)
+            }
           >
             <Image src={imgSocial} loading="lazy" alt="icon" />
             <div className={styles.contentArticle}>
@@ -781,7 +1207,22 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{socialValue}hrs</h2>
+              <div className={styles.DifferentValue}>
+                {(periodOption.current === "weekly" ||
+                  periodOption.current === "monthly") &&
+                  inputSwitch && (
+                    <>
+                      {shouldSocial < socialValue && (
+                        <p className={styles.above}>valor ultrapassa</p>
+                      )}{" "}
+                      {shouldSocial > socialValue && (
+                        <p className={styles.below}>o valor está menor</p>
+                      )}{" "}
+                    </>
+                  )}
+
+                <h2>{socialValue}hrs</h2>
+              </div>
 
               <span>Semana passada - 5h</span>
             </div>
@@ -789,7 +1230,15 @@ export default function dashboard() {
 
           <article
             className={styles.secSelfCare}
-            onClick={() => openCard("selfcare", "sáude")}
+            onClick={() =>
+              openCard(
+                "selfcare",
+                "sáude",
+                false,
+                selfcareValue,
+                shouldSelfcare
+              )
+            }
           >
             <Image src={imgSelfCare} loading="lazy" alt="icon" />
             <div className={styles.contentArticle}>
@@ -802,7 +1251,22 @@ export default function dashboard() {
                 </div>
               </div>
 
-              <h2>{selfcareValue}hrs</h2>
+              <div className={styles.DifferentValue}>
+                {(periodOption.current === "weekly" ||
+                  periodOption.current === "monthly") &&
+                  inputSwitch && (
+                    <>
+                      {shouldSelfcare < selfcareValue && (
+                        <p className={styles.above}>valor ultrapassa</p>
+                      )}{" "}
+                      {shouldSelfcare > selfcareValue && (
+                        <p className={styles.below}>o valor está menor</p>
+                      )}{" "}
+                    </>
+                  )}
+
+                <h2>{selfcareValue}hrs</h2>
+              </div>
 
               <span>Semana passada - 5h</span>
             </div>
