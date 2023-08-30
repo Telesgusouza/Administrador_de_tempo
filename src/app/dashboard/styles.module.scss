@@ -103,9 +103,13 @@
 }
 
 .containerSleep {
-  padding: 20px 15px 0 20px;
+  padding: 20px 15px;
+
+  display: flex;
+  flex-direction: column;
 
   button {
+    margin-bottom: 10px;
     border: none;
     padding: 7px 15px;
 
@@ -120,12 +124,40 @@
   }
 
   strong {
-    margin-left: 20px;
+    margin-top: 5px;
+    font-size: 0.87rem;
     font-weight: 300;
   }
 
+  span {
+    font-weight: 400;
+  }
+
   @media (max-width: 860px) {
-    padding-left: 32px;
+    padding: 20px 0 5px 32px;
+
+    flex-direction: row;
+
+    strong {
+      margin-left: 12px;
+    }
+
+    button {
+      margin-right: 10px;
+    }
+  }
+
+  @media (max-width: 500px) {
+    flex-direction: column;
+
+    button {
+      width: fit-content;
+      margin-bottom: 10px;
+    }
+
+    strong {
+      margin: 0 0 7px 0;
+    }
   }
 }
 
@@ -232,7 +264,21 @@
   }
 
   @media (max-width: 860px) {
+    margin: 0;
+    margin: 0 0 18px 0;
+
+    width: fit-content;
+
     padding: 0 30px;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  @media (max-width: 500px) {
+    margin-top: 10px;
+    
+    flex-direction: column;
+    align-items: start;
   }
 }
 

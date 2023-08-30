@@ -43,7 +43,7 @@ export default function dashboard() {
   const [timeLeft, setTimeLeft] = useState<number>(0);
 
   const [periodOption, setPeriodOption] = useState<IPeriodOption>({
-    current: "monthly",
+    current: "weekly",
   });
   const [currentOptionMonth, setCurrentOptionMonth] = useState<string>("jan");
   const [currentOptionDayWeek, setCurrentOptionDayWeek] =
@@ -55,7 +55,7 @@ export default function dashboard() {
     sleep: false,
   });
   const [toggleCard, setToggleCard] = useState<boolean>(false);
-  const [inputSwitch, setInputSwitch] = useState<boolean>(false);
+  const [inputSwitch, setInputSwitch] = useState<boolean>(true);
   const [sleepCurrent, setSleepCurrent] = useState<number>(8);
 
   const [workValue, setWorkValue] = useState<number>(0);
@@ -119,7 +119,6 @@ export default function dashboard() {
       const baseUrl = `data/${uid}/dataWeekly`;
       const baseUrlMonth = `/data/${uid}/${currentOptionMonth}`;
 
-      // /*     Monthly      */
       if (periodOption.current === "weekly") {
         getDoc(doc(db, baseUrl + "/work")).then((resp) => {
           if (!resp.data()) {
@@ -224,116 +223,37 @@ export default function dashboard() {
 
       clearValue();
 
-      /*       VOLTAR AQUI        */
       if (periodOption.current === "daily") {
         if (currentOptionDayWeek === "seg a sex") {
-          getDoc(doc(db, `data/${uid}/segasex/work`)).then((resp) => {
-            setWorkValue(resp.data()?.time ? resp.data()?.time : 0);
-          });
-
-          getDoc(doc(db, `data/${uid}/segasex/play`)).then((resp) => {
-            setPlayValue(resp.data()?.time ? resp.data()?.time : 0);
-          });
-
-          getDoc(doc(db, `data/${uid}/segasex/study`)).then((resp) => {
-            setStudyValue(resp.data()?.time ? resp.data()?.time : 0);
-          });
-
-          getDoc(doc(db, `data/${uid}/segasex/exercise`)).then((resp) => {
-            setExerciseValue(resp.data()?.time ? resp.data()?.time : 0);
-          });
-
-          getDoc(doc(db, `data/${uid}/segasex/social`)).then((resp) => {
-            setSocialValue(resp.data()?.time ? resp.data()?.time : 0);
-          });
-
-          getDoc(doc(db, `data/${uid}/segasex/selfcare`)).then((resp) => {
-            setSelfcareValue(resp.data()?.time ? resp.data()?.time : 0);
+          getDocs(collection(db, `data/${uid}/segasex`)).then((resp) => {
+            resp.docChanges().forEach((element) => {
+              const task = element.doc.id;
+              handleSetTask(task, element.doc.data().time);
+            });
           });
         } else if (currentOptionDayWeek === "todos") {
-          getDoc(doc(db, `data/${uid}/all/work`)).then((resp) => {
-            setWorkValue(resp.data()?.time ? resp.data()?.time : 0);
-          });
-
-          getDoc(doc(db, `data/${uid}/all/play`)).then((resp) => {
-            setPlayValue(resp.data()?.time ? resp.data()?.time : 0);
-          });
-
-          getDoc(doc(db, `data/${uid}/all/study`)).then((resp) => {
-            setStudyValue(resp.data()?.time ? resp.data()?.time : 0);
-          });
-
-          getDoc(doc(db, `data/${uid}/all/exercise`)).then((resp) => {
-            setExerciseValue(resp.data()?.time ? resp.data()?.time : 0);
-          });
-
-          getDoc(doc(db, `data/${uid}/all/social`)).then((resp) => {
-            setSocialValue(resp.data()?.time ? resp.data()?.time : 0);
-          });
-
-          getDoc(doc(db, `data/${uid}/all/selfcare`)).then((resp) => {
-            setSelfcareValue(resp.data()?.time ? resp.data()?.time : 0);
+          getDocs(collection(db, `data/${uid}/all`)).then((resp) => {
+            resp.docChanges().forEach((element) => {
+              const task = element.doc.id;
+              handleSetTask(task, element.doc.data().time);
+            });
           });
         } else {
-          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/work`)).then(
+          getDocs(collection(db, `data/${uid}/${currentOptionDayWeek}`)).then(
             (resp) => {
-              setWorkValue(resp.data()?.time ? resp.data()?.time : 0);
-            }
-          );
-
-          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/play`)).then(
-            (resp) => {
-              setPlayValue(resp.data()?.time ? resp.data()?.time : 0);
-            }
-          );
-
-          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/study`)).then(
-            (resp) => {
-              setStudyValue(resp.data()?.time ? resp.data()?.time : 0);
-            }
-          );
-
-          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/exercise`)).then(
-            (resp) => {
-              setExerciseValue(resp.data()?.time ? resp.data()?.time : 0);
-            }
-          );
-
-          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/social`)).then(
-            (resp) => {
-              setSocialValue(resp.data()?.time ? resp.data()?.time : 0);
-            }
-          );
-
-          getDoc(doc(db, `data/${uid}/${currentOptionDayWeek}/selfcare`)).then(
-            (resp) => {
-              setSelfcareValue(resp.data()?.time ? resp.data()?.time : 0);
+              resp.docChanges().forEach((element) => {
+                const task = element.doc.id;
+                handleSetTask(task, element.doc.data().time);
+              });
             }
           );
         }
       } else if (periodOption.current === "weekly") {
-        getDoc(doc(db, `data/${uid}/dataWeekly/work`)).then((resp) => {
-          setWorkValue(resp.data()?.time ? resp.data()?.time : 0);
-        });
-
-        getDoc(doc(db, `data/${uid}/dataWeekly/play`)).then((resp) => {
-          setPlayValue(resp.data()?.time ? resp.data()?.time : 0);
-        });
-
-        getDoc(doc(db, `data/${uid}/dataWeekly/study`)).then((resp) => {
-          setStudyValue(resp.data()?.time ? resp.data()?.time : 0);
-        });
-
-        getDoc(doc(db, `data/${uid}/dataWeekly/exercise`)).then((resp) => {
-          setExerciseValue(resp.data()?.time ? resp.data()?.time : 0);
-        });
-
-        getDoc(doc(db, `data/${uid}/dataWeekly/social`)).then((resp) => {
-          setSocialValue(resp.data()?.time ? resp.data()?.time : 0);
-        });
-
-        getDoc(doc(db, `data/${uid}/dataWeekly/selfcare`)).then((resp) => {
-          setSelfcareValue(resp.data()?.time ? resp.data()?.time : 0);
+        getDocs(collection(db, `data/${uid}/dataWeekly`)).then((resp) => {
+          resp.docChanges().forEach((element) => {
+            const task = element.doc.id;
+            handleSetTask(task, element.doc.data().time);
+          });
         });
       } else if (periodOption.current === "monthly") {
         getDocs(collection(db, `data/${uid}/${currentOptionMonth}`)).then(
@@ -435,7 +355,6 @@ export default function dashboard() {
   }
 
   async function rightAmount(setHook: any, urlTask: string, uid: string) {
-    // voltar aqui
     let totalHours = 0;
     for (let i = 1; i <= 7; i++) {
       const data = await getDoc(
@@ -446,7 +365,6 @@ export default function dashboard() {
       }
     }
 
-    /// voltar aqui
     if (periodOption.current === "weekly") {
       setHook(totalHours);
     } else if (periodOption.current === "monthly") {
@@ -455,7 +373,6 @@ export default function dashboard() {
   }
 
   async function handleHittingDice(url: string, urlTask: string, uid: string) {
-    // dayOfTheWeek
     let totalHours = 0;
     for (let i = 1; i <= 7; i++) {
       const data = await getDoc(
@@ -506,7 +423,6 @@ export default function dashboard() {
       setShowShouldValue({ value: 0, toggle: false });
     }
 
-    // setShowShouldValue();
     setToggleInfoCard({ card, name, sleep });
     setToggleCard(true);
   }
@@ -571,8 +487,6 @@ export default function dashboard() {
       ) {
         if (toggleInfoCard) {
           setInputValue(Number(e));
-
-          console.log(timeLeft);
         }
       }
 
@@ -622,6 +536,10 @@ export default function dashboard() {
         break;
       }
     }
+  }
+
+  function redirect(url: string) {
+    window.location.replace(url);
   }
 
   async function handleSubmitSleep() {
@@ -939,6 +857,8 @@ export default function dashboard() {
             <Image
               src={dataUser?.photoUser ? dataUser.photoUser : imgNoUser}
               alt="avatar"
+
+              onClick={() => redirect("/settings")}
             />
             <div>
               <span>Relatório para</span>
@@ -947,8 +867,12 @@ export default function dashboard() {
           </div>
           <div className={styles.containerSleep}>
             <button onClick={() => openCard("", "", true)}>Dormir</button>
-            <strong>{sleepCurrent}hrs de sono</strong>
-            <strong>Em torno de {timeLeft}hrs restantes </strong>
+            <strong>
+              <span>{sleepCurrent}hrs</span> de sono
+            </strong>
+            <strong>
+              Em torno de <span>{timeLeft}hrs</span> restantes{" "}
+            </strong>
           </div>
           <div className={styles.toggleMessage}>
             {(periodOption.current === "weekly" ||
@@ -959,7 +883,7 @@ export default function dashboard() {
                   {" "}
                   <div
                     className={
-                      inputSwitch ? styles.switchLeft : styles.switchRight
+                      inputSwitch ? styles.switchRight : styles.switchLeft
                     }
                   />{" "}
                   <input
