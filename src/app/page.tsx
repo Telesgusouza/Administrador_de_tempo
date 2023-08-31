@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { Provider } from 'react-redux'
 
 import styles from "./styles/page.module.css";
 
@@ -19,6 +20,7 @@ import {
 import { auth, db, storage } from "./api/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import store from "./api/redux/store";
 
 export default function Home() {
   const [filePhoto, setFilePhoto] = useState<null | File>(null);
@@ -43,11 +45,6 @@ export default function Home() {
       if (user?.uid) {
         window.location.replace("/dashboard");
       }
-      // onAuthStateChanged(auth, (user) => {
-      //   if (user) {
-      //     window.location.replace("/dashboard");
-      //   }
-      // });
     }
 
     getUserOn();
@@ -143,7 +140,6 @@ export default function Home() {
               toast.error("Conta já existe");
             }
           }
-          ////////////
         } else {
           toast.error("senha deve ter 6 caracteres ou mais");
         }
@@ -186,75 +182,78 @@ export default function Home() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.containerContent}>
-        <form onSubmit={handleSubmit}>
-          <div className={styles.info}>
-            <h1>faça {toggleForm ? "seu cadastro" : "login no site"}</h1>
-            <p>
-              Faça login ou registre-se para começar a administrar seu tempo.
-            </p>
-          </div>
+    <Provider store={store}>
+      <div className={styles.container}>
+        <div className={styles.containerContent}>
+          <form onSubmit={handleSubmit}>
+            <div className={styles.info}>
+              <h1>faça {toggleForm ? "seu cadastro" : "login no site"}</h1>
+              <p>
+                Faça login ou registre-se para começar a administrar seu tempo.
+              </p>
+            </div>
 
-          {toggleForm && (
-            <>
-              <div className={styles.photo}>
-                <input type="file" onChange={(e) => handleFile(e)} />
-                {avatar ? (
-                  <img src={avatar} loading="lazy" alt="avatar user" />
-                ) : (
-                  <Image src={imgNoUser} loading="lazy" alt="avatar user" />
-                )}
-              </div>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                type="text"
-                placeholder="Nome"
-              />
-            </>
-          )}
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-            placeholder="E-mail"
-          />
-          <div className={styles.password}>
-            <label htmlFor="password" className={styles.password}>
-              <input
-                type={togglePassword ? "text" : "password"}
-                onChange={(e) => setPassword(e.target.value)}
-                value={password}
-                placeholder="Senha"
-              />
-              <Image
-                onClick={handleVisiblePassword}
-                src={togglePassword ? imgPasswordNot : imgPassword}
-                loading="lazy"
-                alt="icone password"
-              />
-            </label>
-            <p onClick={handleResetPassword}>esqueceu a senha?</p>
-          </div>
-
-          <button type="submit" disabled={btnDisabled}>
-            {toggleForm ? "Cadastrar-se" : "Logar"}
-          </button>
-          <p className={styles.toggleOptionLogin}>
-            {toggleForm ? (
+            {toggleForm && (
               <>
-                Já tem conta? <strong onClick={handleToggleForm}>entre</strong>
-              </>
-            ) : (
-              <>
-                Ainda não tem conta?{" "}
-                <strong onClick={handleToggleForm}>cadastre-se</strong>
+                <div className={styles.photo}>
+                  <input type="file" onChange={(e) => handleFile(e)} />
+                  {avatar ? (
+                    <img src={avatar} loading="lazy" alt="avatar user" />
+                  ) : (
+                    <Image src={imgNoUser} loading="lazy" alt="avatar user" />
+                  )}
+                </div>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  type="text"
+                  placeholder="Nome"
+                />
               </>
             )}
-          </p>
-        </form>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              placeholder="E-mail"
+            />
+            <div className={styles.password}>
+              <label htmlFor="password" className={styles.password}>
+                <input
+                  type={togglePassword ? "text" : "password"}
+                  onChange={(e) => setPassword(e.target.value)}
+                  value={password}
+                  placeholder="Senha"
+                />
+                <Image
+                  onClick={handleVisiblePassword}
+                  src={togglePassword ? imgPasswordNot : imgPassword}
+                  loading="lazy"
+                  alt="icone password"
+                />
+              </label>
+              <p onClick={handleResetPassword}>esqueceu a senha?</p>
+            </div>
+
+            <button type="submit" disabled={btnDisabled}>
+              {toggleForm ? "Cadastrar-se" : "Logar"}
+            </button>
+            <p className={styles.toggleOptionLogin}>
+              {toggleForm ? (
+                <>
+                  Já tem conta?{" "}
+                  <strong onClick={handleToggleForm}>entre</strong>
+                </>
+              ) : (
+                <>
+                  Ainda não tem conta?{" "}
+                  <strong onClick={handleToggleForm}>cadastre-se</strong>
+                </>
+              )}
+            </p>
+          </form>
+        </div>
       </div>
-    </div>
+    </Provider>
   );
 }
