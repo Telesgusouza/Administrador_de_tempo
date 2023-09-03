@@ -1,5 +1,4 @@
 "use client";
-import { useSelector, useDispatch } from "react-redux";
 
 import styles from "./styles.module.css";
 
@@ -37,7 +36,9 @@ export default function settings() {
   }, []);
 
   function redirect() {
-    window.location.replace("/dashboard");
+    if (typeof window !== "undefined") {
+      window.location.replace("/dashboard");
+    }
   }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement> | null) {
@@ -145,13 +146,15 @@ export default function settings() {
     if (confirmDelete) {
       const user = auth.currentUser;
       if (user) {
-        deleteUser(user).then(() => {
-          toast.success("conta deletada com sucesso.")
-          window.location.replace("/");
-        }).catch((err) => {
-          console.error(err);
-          toast.error("Erro ao deletar conta")
-        });
+        deleteUser(user)
+          .then(() => {
+            toast.success("conta deletada com sucesso.");
+            window.location.replace("/");
+          })
+          .catch((err) => {
+            console.error(err);
+            toast.error("Erro ao deletar conta");
+          });
       }
     }
   }

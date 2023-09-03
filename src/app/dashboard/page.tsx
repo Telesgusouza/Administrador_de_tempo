@@ -24,6 +24,7 @@ import { User, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../api/firebase";
 import { toast } from "react-toastify";
 import Chart from "../components/Chart";
+import { checkConnected } from "../api/utils";
 
 interface IPeriodOption {
   current: "daily" | "weekly" | "monthly";
@@ -135,6 +136,8 @@ export default function dashboard() {
         setSleepCurrent(getHours.data()?.sleep);
       }
     }
+
+    checkConnected();
 
     getDateCurrent();
     getSleep();
@@ -505,7 +508,6 @@ export default function dashboard() {
     } else if (periodOption.current === "monthly") {
       const taskCurrentValue = getCurrentValue();
 
-
       if (
         (Number(e) <= timeLeft + Number(taskCurrentValue) && Number(e) >= 0) ||
         e === ""
@@ -514,7 +516,6 @@ export default function dashboard() {
           setInputValue(Number(e));
         }
       }
-
     }
   }
 
@@ -563,7 +564,9 @@ export default function dashboard() {
   }
 
   function redirect(url: string) {
-    window.location.replace(url);
+    if (typeof window !== "undefined") {
+      window.location.replace(url);
+    }
   }
 
   async function handleSubmitSleep() {
