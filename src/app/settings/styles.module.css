@@ -21,7 +21,28 @@
 .container .containerButton {
   width: 100%;
   max-width: 500px;
-  margin-bottom: 20px;
+  margin: 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.container .containerButton button {
+  padding: 7px 15px;
+  border: none;
+  color: white;
+  transition: background-color 0.2s ease;
+}
+.container .containerButton button:nth-child(1) {
+  background-color: rgb(255, 74, 18);
+}
+.container .containerButton button:nth-child(1):hover {
+  background-color: rgb(246, 92, 36);
+}
+.container .containerButton button:nth-child(2) {
+  background-color: rgb(227, 227, 227);
+  color: black;
+  font-weight: 400;
+  text-shadow: 0 0 15px rgb(212, 212, 212);
 }
 .container main {
   width: 100%;
@@ -71,6 +92,10 @@
   font-weight: 400;
   background-color: var(--desaturated);
 }
+.container form button:disabled {
+  opacity: 0.85;
+  cursor: not-allowed;
+}
 .container form p {
   width: -moz-fit-content;
   width: fit-content;
@@ -102,7 +127,6 @@
   position: relative;
   z-index: 20;
   overflow: hidden;
-  background-color: #c3c3c3;
 }
 .container .photo img {
   width: 100%;
@@ -112,6 +136,17 @@
   left: 0;
   -o-object-fit: cover;
      object-fit: cover;
+  background-color: #c3c3c3;
+}
+.container .photo .inputPhoto {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
 .container .loadingPhoto {
   width: 100%;
@@ -132,4 +167,13 @@
 .container input:disabled {
   color: white;
   cursor: not-allowed;
+}
+@media (max-width: 500px) {
+  .container h1 {
+    text-align: center;
+  }
+  .container p {
+    text-align: center;
+    margin-bottom: 50px;
+  }
 }/*# sourceMappingURL=styles.module.css.map */

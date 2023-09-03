@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { Provider } from 'react-redux'
 
 import styles from "./styles/page.module.css";
 
@@ -20,7 +19,7 @@ import {
 import { auth, db, storage } from "./api/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import store from "./api/redux/store";
+
 
 export default function Home() {
   const [filePhoto, setFilePhoto] = useState<null | File>(null);
@@ -33,6 +32,7 @@ export default function Home() {
 
   const [toggleForm, setToggleForm] = useState<boolean>(false);
   const [togglePassword, setTogglePassword] = useState<boolean>(false);
+
 
   useEffect(() => {
     async function getUserOn() {
@@ -182,7 +182,6 @@ export default function Home() {
   }
 
   return (
-    <Provider store={store}>
       <div className={styles.container}>
         <div className={styles.containerContent}>
           <form onSubmit={handleSubmit}>
@@ -254,6 +253,5 @@ export default function Home() {
           </form>
         </div>
       </div>
-    </Provider>
   );
 }

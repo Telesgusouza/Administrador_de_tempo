@@ -8,6 +8,7 @@
   justify-content: center;
   align-items: center;
   padding: 20px;
+  padding-bottom: 50px;
 
   main {
     width: 100%;
@@ -20,6 +21,7 @@
   menu {
     width: 100%;
     max-width: 240px;
+    height: fit-content;
 
     border-radius: 15px;
     background-color: var(--darkBlue);
@@ -33,6 +35,10 @@
       display: grid;
       grid-template-columns: 1fr;
       grid-gap: 10px;
+    }
+
+    .ulPeriodOption {
+      padding-bottom: 25px;
     }
 
     li {
@@ -68,12 +74,30 @@
         padding: 0 14px;
       }
     }
+
+    .containerOption {
+      margin: 0;
+      border-end-end-radius: 10px;
+      border-end-start-radius: 10px;
+    }
   }
 
   @media (max-width: 500px) {
     menu {
       li {
-        padding: 0;
+        padding: 2px 10px;
+      }
+    }
+
+    .ulPeriodOption {
+      display: grid;
+      grid-template-columns: 1fr;
+
+      li {
+        padding: 5px;
+
+        background-color: #5746ea;
+        text-align: center;
       }
     }
   }
@@ -85,10 +109,11 @@
   width: 100%;
   height: fit-content;
 
+  margin-bottom: 70px;
+
   background-color: var(--darkBlue);
 
   border-top: 4px solid rgba(255, 255, 255, 0.404);
-  // flex-wrap: wrap;
   display: grid;
   grid-template-columns: 1fr;
 
@@ -102,26 +127,26 @@
   }
 }
 
+.btn {
+  margin-bottom: 10px;
+  border: none;
+  padding: 7px 15px;
+
+  color: white;
+  background-color: #5746ea;
+
+  transition: opacity 0.12s ease;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
 .containerSleep {
   padding: 20px 15px;
 
   display: flex;
   flex-direction: column;
-
-  button {
-    margin-bottom: 10px;
-    border: none;
-    padding: 7px 15px;
-
-    color: white;
-    background-color: #5746ea;
-
-    transition: opacity 0.12s ease;
-
-    &:hover {
-      opacity: 0.8;
-    }
-  }
 
   strong {
     margin-top: 5px;
@@ -276,7 +301,7 @@
 
   @media (max-width: 500px) {
     margin-top: 10px;
-    
+
     flex-direction: column;
     align-items: start;
   }
@@ -344,10 +369,15 @@
   max-width: 1000px;
   margin-left: 25px;
 
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  grid-gap: 25px;
+  display: flex;
+  flex-direction: column;
+
+  .containerContent {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    grid-gap: 25px;
+  }
 
   .secWork {
     background-color: var(--lightRedWork);
@@ -451,11 +481,15 @@
   }
 
   @media (max-width: 700px) {
-    grid-template-columns: 1fr 1fr;
+    .containerContent {
+      grid-template-columns: 1fr 1fr;
+    }
   }
 
   @media (max-width: 500px) {
-    grid-template-columns: 1fr;
+    .containerContent {
+      grid-template-columns: 1fr;
+    }
   }
 }
 
@@ -522,22 +556,6 @@
         color: rgba(255, 255, 255, 0.73);
       }
     }
-
-    button {
-      padding: 7px 10px;
-
-      border: none;
-
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: white;
-      background-color: #5746ea;
-
-      &:disabled {
-        cursor: not-allowed;
-        opacity: 0.7;
-      }
-    }
   }
 
   .containerEditBtn {
@@ -558,5 +576,42 @@
         opacity: 0.9;
       }
     }
+  }
+}
+
+.BtnAdjustTime {
+  padding: 7px 10px;
+  margin-bottom: 15px;
+  border: none;
+
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: white;
+  background-color: #5746ea;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+}
+
+.containerChart {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: var(--darkBlue);
+
+  h2 {
+    text-align: center;
+    font-size: 2.4rem;
+    font-weight: 300;
+  }
+
+  p {
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 300;
+
+    margin-bottom: 40px;
   }
 }

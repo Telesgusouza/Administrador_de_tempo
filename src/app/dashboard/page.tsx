@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import Image, { StaticImageData } from "next/image";
 import styles from "./styles.module.css";
 
 import imgNoUser from "../../../public/images/noUser.webp";
@@ -14,7 +14,6 @@ import imgSelfCare from "../../../public/images/icon-self-care.svg";
 import React, { useEffect, useState } from "react";
 import {
   DocumentData,
-  addDoc,
   collection,
   doc,
   getDoc,
@@ -24,6 +23,7 @@ import {
 import { User, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../api/firebase";
 import { toast } from "react-toastify";
+import Chart from "../components/Chart";
 
 interface IPeriodOption {
   current: "daily" | "weekly" | "monthly";
@@ -38,12 +38,15 @@ interface IToggleCard {
 
 export default function dashboard() {
   const [inputValue, setInputValue] = useState<number>(0);
-  const [dataUser, setDataUser] = useState<DocumentData | null>(null);
+  const [nameUser, setNameUser] = useState<string | null>(null);
+  const [photoUser, setPhotoUser] = useState<string | StaticImageData | null>(
+    null
+  );
 
   const [timeLeft, setTimeLeft] = useState<number>(0);
 
   const [periodOption, setPeriodOption] = useState<IPeriodOption>({
-    current: "weekly",
+    current: "monthly",
   });
   const [currentOptionMonth, setCurrentOptionMonth] = useState<string>("jan");
   const [currentOptionDayWeek, setCurrentOptionDayWeek] =
@@ -89,6 +92,7 @@ export default function dashboard() {
     "sab",
   ];
   const months = [
+    "todos",
     "jan",
     "fev",
     "mar",
@@ -110,14 +114,108 @@ export default function dashboard() {
       const dayWeek = date.getDay();
       const month = date.getMonth();
 
-      setCurrentOptionMonth(months[month]);
+      setCurrentOptionMonth(months[1 + month]);
       setCurrentOptionDayWeek(dayOfTheWeek[2 + dayWeek]);
     }
 
+    async function getDataUser() {
+      const uid = await getUid();
+      const urlUser = `/dataUser/${uid}`;
+      const data: DocumentData = await getDoc(doc(db, urlUser));
+
+      setNameUser(data.data().name);
+      setPhotoUser(data.data().photoUser ? data.data().photoUser : null);
+    }
+
+    async function getSleep() {
+      const uid = await getUid();
+
+      const getHours = await getDoc(doc(db, `data-${uid}/timeSleep`));
+      if (getHours.data()?.sleep) {
+        setSleepCurrent(getHours.data()?.sleep);
+      }
+    }
+
+    getDateCurrent();
+    getSleep();
+    getDataUser();
+  }, []);
+
+  useEffect(() => {
+    async function getDataTime() {
+      const uid = await getUid();
+
+      clearValue();
+
+      if (periodOption.current === "daily") {
+        if (currentOptionDayWeek === "seg a sex") {
+          getDocs(collection(db, `data/${uid}/segasex`)).then((resp) => {
+            resp.docChanges().forEach((element) => {
+              const task = element.doc.id;
+              handleSetTask(task, element.doc.data().time);
+            });
+          });
+        } else if (currentOptionDayWeek === "todos") {
+          getDocs(collection(db, `data/${uid}/all`)).then((resp) => {
+            resp.docChanges().forEach((element) => {
+              const task = element.doc.id;
+              handleSetTask(task, element.doc.data().time);
+            });
+          });
+        } else {
+          getDocs(collection(db, `data/${uid}/${currentOptionDayWeek}`)).then(
+            (resp) => {
+              resp.docChanges().forEach((element) => {
+                const task = element.doc.id;
+                handleSetTask(task, element.doc.data().time);
+              });
+            }
+          );
+        }
+      } else if (periodOption.current === "weekly") {
+        getDocs(collection(db, `data/${uid}/dataWeekly`)).then((resp) => {
+          resp.docChanges().forEach((element) => {
+            const task = element.doc.id;
+            handleSetTask(task, element.doc.data().time);
+          });
+        });
+      } else if (periodOption.current === "monthly") {
+        if (currentOptionMonth === "todos") {
+          getDocs(collection(db, `data/${uid}/monthly-all`)).then((resp) => {
+            resp.docChanges().forEach((element) => {
+              const task = element.doc.id;
+              handleSetTask(task, element.doc.data().time);
+            });
+          });
+        } else {
+          getDocs(collection(db, `data/${uid}/${currentOptionMonth}`)).then(
+            (resp) => {
+              resp.docChanges().forEach((element) => {
+                const task = element.doc.id;
+                handleSetTask(task, element.doc.data().time);
+              });
+            }
+          );
+        }
+      }
+    }
+
+    getDataTime();
+
+    return () => {};
+  }, [currentOptionDayWeek, currentOptionMonth, periodOption]);
+
+  useEffect(() => {
     async function handleData() {
       const uid = await getUid();
       const baseUrl = `data/${uid}/dataWeekly`;
-      const baseUrlMonth = `/data/${uid}/${currentOptionMonth}`;
+      let baseUrlMonth;
+
+      if (currentOptionMonth === "todos") {
+        baseUrlMonth = `/data/${uid}/${currentOptionMonth}`;
+      } else {
+        baseUrlMonth = `/data/${uid}/monthly-all`;
+      }
 
       if (periodOption.current === "weekly") {
         getDoc(doc(db, baseUrl + "/work")).then((resp) => {
@@ -194,83 +292,8 @@ export default function dashboard() {
       }
     }
 
-    async function getDataUser() {
-      const uid = await getUid();
-      const urlUser = `/dataUser/${uid}`;
-      const data: DocumentData = await getDoc(doc(db, urlUser));
-      setDataUser(data.data());
-    }
-
-    async function getSleep() {
-      const uid = await getUid();
-
-      const getHours = await getDoc(doc(db, `data-${uid}/timeSleep`));
-      if (getHours.data()?.sleep) {
-        setSleepCurrent(getHours.data()?.sleep);
-      }
-    }
-
-    getDateCurrent();
-    getSleep();
-    getDataUser();
-
     handleData();
-  }, []);
-
-  useEffect(() => {
-    async function getDataTime() {
-      const uid = await getUid();
-
-      clearValue();
-
-      if (periodOption.current === "daily") {
-        if (currentOptionDayWeek === "seg a sex") {
-          getDocs(collection(db, `data/${uid}/segasex`)).then((resp) => {
-            resp.docChanges().forEach((element) => {
-              const task = element.doc.id;
-              handleSetTask(task, element.doc.data().time);
-            });
-          });
-        } else if (currentOptionDayWeek === "todos") {
-          getDocs(collection(db, `data/${uid}/all`)).then((resp) => {
-            resp.docChanges().forEach((element) => {
-              const task = element.doc.id;
-              handleSetTask(task, element.doc.data().time);
-            });
-          });
-        } else {
-          getDocs(collection(db, `data/${uid}/${currentOptionDayWeek}`)).then(
-            (resp) => {
-              resp.docChanges().forEach((element) => {
-                const task = element.doc.id;
-                handleSetTask(task, element.doc.data().time);
-              });
-            }
-          );
-        }
-      } else if (periodOption.current === "weekly") {
-        getDocs(collection(db, `data/${uid}/dataWeekly`)).then((resp) => {
-          resp.docChanges().forEach((element) => {
-            const task = element.doc.id;
-            handleSetTask(task, element.doc.data().time);
-          });
-        });
-      } else if (periodOption.current === "monthly") {
-        getDocs(collection(db, `data/${uid}/${currentOptionMonth}`)).then(
-          (resp) => {
-            resp.docChanges().forEach((element) => {
-              const task = element.doc.id;
-              handleSetTask(task, element.doc.data().time);
-            });
-          }
-        );
-      }
-    }
-
-    getDataTime();
-
-    return () => {};
-  }, [currentOptionDayWeek, currentOptionMonth, periodOption]);
+  }, [currentOptionMonth, periodOption]);
 
   useEffect(() => {
     let limit: number;
@@ -360,6 +383,7 @@ export default function dashboard() {
       const data = await getDoc(
         doc(db, `/data/${uid}/${dayOfTheWeek[1 + i]}/${urlTask}`)
       );
+
       if (data.data()) {
         totalHours += data.data()?.time;
       }
@@ -481,6 +505,7 @@ export default function dashboard() {
     } else if (periodOption.current === "monthly") {
       const taskCurrentValue = getCurrentValue();
 
+
       if (
         (Number(e) <= timeLeft + Number(taskCurrentValue) && Number(e) >= 0) ||
         e === ""
@@ -490,7 +515,6 @@ export default function dashboard() {
         }
       }
 
-      setInputValue(Number(e));
     }
   }
 
@@ -546,6 +570,14 @@ export default function dashboard() {
     const uid = await getUid();
     setDoc(doc(db, `data-${uid}/timeSleep`), {
       sleep: inputValue,
+    }).then(() => {
+      setSleepCurrent(inputValue);
+      toast.success("Sono reajustado com sucesso!");
+      clearValue();
+
+      setTimeout(() => {
+        setToggleCard(false);
+      }, 800);
     });
   }
 
@@ -714,77 +746,166 @@ export default function dashboard() {
         }, 700);
       });
     } else if (periodOption.current === "monthly") {
-      const refData = doc(
-        db,
-        `data/${uid}/${currentOptionMonth}/${toggleInfoCard.card}`
-      );
-      setDoc(refData, {
-        date: new Date(),
-        time: inputValue,
-      }).then(() => {
-        toast.success("Atualizado com sucesso");
-        updateData(String(toggleInfoCard.card), inputValue);
+      let refDoc;
 
-        switch (toggleInfoCard.card) {
-          case "work": {
-            rightAmount(
-              setShouldWork,
-              String(toggleInfoCard.card),
-              String(uid)
+      if (currentOptionMonth === "todos") {
+        refDoc = doc(db, `data/${uid}/monthly-all/${toggleInfoCard.card}`);
+        try {
+          await setDoc(refDoc, {
+            date: new Date(),
+            time: inputValue,
+          });
+
+          for (let i = 0; i <= 11; i++) {
+            await setDoc(
+              doc(db, `data/${uid}/${months[1 + i]}/${toggleInfoCard.card}`),
+              {
+                date: new Date(),
+                time: inputValue,
+              }
             );
-            break;
           }
 
-          case "play": {
-            rightAmount(
-              setShouldPlay,
-              String(toggleInfoCard.card),
-              String(uid)
-            );
-            break;
+          toast.success("Atualizado com sucesso");
+          updateData(String(toggleInfoCard.card), inputValue);
+
+          switch (toggleInfoCard.card) {
+            case "work": {
+              rightAmount(
+                setShouldWork,
+                String(toggleInfoCard.card),
+                String(uid)
+              );
+              break;
+            }
+
+            case "play": {
+              rightAmount(
+                setShouldPlay,
+                String(toggleInfoCard.card),
+                String(uid)
+              );
+              break;
+            }
+
+            case "study": {
+              rightAmount(
+                setShouldStudy,
+                String(toggleInfoCard.card),
+                String(uid)
+              );
+              break;
+            }
+
+            case "exercise": {
+              rightAmount(
+                setShouldExercise,
+                String(toggleInfoCard.card),
+                String(uid)
+              );
+              break;
+            }
+
+            case "social": {
+              rightAmount(
+                setShouldSocial,
+                String(toggleInfoCard.card),
+                String(uid)
+              );
+              break;
+            }
+
+            case "selfcare": {
+              rightAmount(
+                setShouldSelfcare,
+                String(toggleInfoCard.card),
+                String(uid)
+              );
+              break;
+            }
           }
 
-          case "study": {
-            rightAmount(
-              setShouldStudy,
-              String(toggleInfoCard.card),
-              String(uid)
-            );
-            break;
-          }
-
-          case "exercise": {
-            rightAmount(
-              setShouldExercise,
-              String(toggleInfoCard.card),
-              String(uid)
-            );
-            break;
-          }
-
-          case "social": {
-            rightAmount(
-              setShouldSocial,
-              String(toggleInfoCard.card),
-              String(uid)
-            );
-            break;
-          }
-
-          case "selfcare": {
-            rightAmount(
-              setShouldSelfcare,
-              String(toggleInfoCard.card),
-              String(uid)
-            );
-            break;
-          }
+          setTimeout(() => {
+            handleCloseCard();
+          }, 700);
+        } catch (err) {
+          console.error("Erro ao atualizar dados ", err);
+          toast.error("Erro ao atualizar dados");
         }
+      } else {
+        refDoc = doc(
+          db,
+          `data/${uid}/${currentOptionMonth}/${toggleInfoCard.card}`
+        );
 
-        setTimeout(() => {
-          handleCloseCard();
-        }, 700);
-      });
+        setDoc(refDoc, {
+          date: new Date(),
+          time: inputValue,
+        }).then(() => {
+          toast.success("Atualizado com sucesso");
+          updateData(String(toggleInfoCard.card), inputValue);
+
+          switch (toggleInfoCard.card) {
+            case "work": {
+              rightAmount(
+                setShouldWork,
+                String(toggleInfoCard.card),
+                String(uid)
+              );
+              break;
+            }
+
+            case "play": {
+              rightAmount(
+                setShouldPlay,
+                String(toggleInfoCard.card),
+                String(uid)
+              );
+              break;
+            }
+
+            case "study": {
+              rightAmount(
+                setShouldStudy,
+                String(toggleInfoCard.card),
+                String(uid)
+              );
+              break;
+            }
+
+            case "exercise": {
+              rightAmount(
+                setShouldExercise,
+                String(toggleInfoCard.card),
+                String(uid)
+              );
+              break;
+            }
+
+            case "social": {
+              rightAmount(
+                setShouldSocial,
+                String(toggleInfoCard.card),
+                String(uid)
+              );
+              break;
+            }
+
+            case "selfcare": {
+              rightAmount(
+                setShouldSelfcare,
+                String(toggleInfoCard.card),
+                String(uid)
+              );
+              break;
+            }
+          }
+
+          setTimeout(() => {
+            handleCloseCard();
+          }, 700);
+        });
+      }
     }
   }
 
@@ -831,9 +952,20 @@ export default function dashboard() {
               {(periodOption.current === "weekly" ||
                 periodOption.current === "monthly") &&
                 showShouldValue.toggle && (
-                  <p className={styles.valueShouldBe}>
-                    o Valor deveria ser {showShouldValue.value}
-                  </p>
+                  <>
+                    <p className={styles.valueShouldBe}>
+                      o Valor deveria ser {showShouldValue.value}
+                    </p>
+
+                    <button
+                      className={styles.BtnAdjustTime}
+                      onClick={() =>
+                        setInputValue(Number(showShouldValue.value))
+                      }
+                    >
+                      Ajustar tempo?
+                    </button>
+                  </>
                 )}
             </div>
 
@@ -845,7 +977,9 @@ export default function dashboard() {
                 type="number"
               />
 
-              <button type="submit">Editar</button>
+              <button type="submit" className={styles.btn}>
+                Editar
+              </button>
             </form>
           </div>
         </div>
@@ -854,19 +988,28 @@ export default function dashboard() {
       <main>
         <menu>
           <div className={styles.contentUser}>
-            <Image
-              src={dataUser?.photoUser ? dataUser.photoUser : imgNoUser}
+            <img
+              src={
+                typeof photoUser === "string"
+                  ? photoUser
+                  : (imgNoUser as StaticImageData).src
+              }
               alt="avatar"
-
               onClick={() => redirect("/settings")}
             />
+
             <div>
               <span>Relatório para</span>
-              <h1>{dataUser?.name}</h1>
+              <h1>{nameUser}</h1>
             </div>
           </div>
           <div className={styles.containerSleep}>
-            <button onClick={() => openCard("", "", true)}>Dormir</button>
+            <button
+              className={styles.btn}
+              onClick={() => openCard("", "", true)}
+            >
+              Dormir
+            </button>
             <strong>
               <span>{sleepCurrent}hrs</span> de sono
             </strong>
@@ -874,28 +1017,26 @@ export default function dashboard() {
               Em torno de <span>{timeLeft}hrs</span> restantes{" "}
             </strong>
           </div>
-          <div className={styles.toggleMessage}>
-            {(periodOption.current === "weekly" ||
-              periodOption.current === "monthly") && (
-              <>
-                <p>desativar mensagem no card</p>{" "}
-                <div className={styles.inputSwitch}>
-                  {" "}
-                  <div
-                    className={
-                      inputSwitch ? styles.switchRight : styles.switchLeft
-                    }
-                  />{" "}
-                  <input
-                    type="checkbox"
-                    checked={inputSwitch}
-                    onClick={() => setInputSwitch((p) => !p)}
-                  />{" "}
-                </div>{" "}
-              </>
-            )}
-          </div>
-          <ul>
+          {(periodOption.current === "weekly" ||
+            periodOption.current === "monthly") && (
+            <div className={styles.toggleMessage}>
+              <p>desativar mensagem no card</p>{" "}
+              <div className={styles.inputSwitch}>
+                {" "}
+                <div
+                  className={
+                    inputSwitch ? styles.switchRight : styles.switchLeft
+                  }
+                />{" "}
+                <input
+                  type="checkbox"
+                  checked={inputSwitch}
+                  onClick={() => setInputSwitch((p) => !p)}
+                />{" "}
+              </div>{" "}
+            </div>
+          )}
+          <ul className={styles.ulPeriodOption}>
             <li
               onClick={() => setPeriodOption({ current: "daily" })}
               className={
@@ -956,245 +1097,270 @@ export default function dashboard() {
         </menu>
 
         <section className={styles.containerSection}>
-          <article
-            className={styles.secWork}
-            onClick={() =>
-              openCard("work", "trabalho", false, workValue, shouldWork)
-            }
-          >
-            <Image src={imgWork} loading="lazy" alt="icon" />
-            <div className={styles.contentArticle}>
-              <div>
-                <strong>Trabalho</strong>
-                <div className={styles.dots}>
-                  <div></div>
-                  <div></div>
-                  <div></div>
+          <div className={styles.containerContent}>
+            <article
+              className={styles.secWork}
+              onClick={() =>
+                openCard("work", "trabalho", false, workValue, shouldWork)
+              }
+            >
+              <Image src={imgWork} loading="lazy" alt="icon" />
+              <div className={styles.contentArticle}>
+                <div>
+                  <strong>Trabalho</strong>
+                  <div className={styles.dots}>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                  </div>
                 </div>
-              </div>
 
-              <div className={styles.DifferentValue}>
-                {(periodOption.current === "weekly" ||
-                  periodOption.current === "monthly") &&
-                  inputSwitch && (
-                    <>
-                      {shouldWork < workValue && (
-                        <p className={styles.above}>valor ultrapassa</p>
-                      )}{" "}
-                      {shouldWork > workValue && (
-                        <p className={styles.below}>o valor está menor</p>
-                      )}{" "}
-                    </>
-                  )}
+                <div className={styles.DifferentValue}>
+                  {(periodOption.current === "weekly" ||
+                    periodOption.current === "monthly") &&
+                    inputSwitch && (
+                      <>
+                        {shouldWork < workValue && (
+                          <p className={styles.above}>valor ultrapassa</p>
+                        )}{" "}
+                        {shouldWork > workValue && (
+                          <p className={styles.below}>o valor está menor</p>
+                        )}{" "}
+                      </>
+                    )}
 
-                <h2>{workValue}hrs</h2>
-              </div>
-
-              <span>Semana passada - 5h</span>
-            </div>
-          </article>
-
-          <article
-            className={styles.secPlay}
-            onClick={() =>
-              openCard("play", "Jogos", false, playValue, shouldPlay)
-            }
-          >
-            <Image src={imgPlay} loading="lazy" alt="icon" />
-            <div className={styles.contentArticle}>
-              <div>
-                <strong>Jogos</strong>
-                <div className={styles.dots}>
-                  <div></div>
-                  <div></div>
-                  <div></div>
+                  <h2>{workValue}hrs</h2>
                 </div>
+
+                <span>Semana passada - 5h</span>
               </div>
+            </article>
 
-              <div className={styles.DifferentValue}>
-                {(periodOption.current === "weekly" ||
-                  periodOption.current === "monthly") &&
-                  inputSwitch && (
-                    <>
-                      {shouldPlay < playValue && (
-                        <p className={styles.above}>valor ultrapassa</p>
-                      )}{" "}
-                      {shouldPlay > playValue && (
-                        <p className={styles.below}>o valor está menor</p>
-                      )}{" "}
-                    </>
-                  )}
-
-                <h2>{playValue}hrs</h2>
-              </div>
-
-              <span>Semana passada - 5h</span>
-            </div>
-          </article>
-
-          <article
-            className={styles.secStudy}
-            onClick={() =>
-              openCard("study", "estudos", false, studyValue, shouldStudy)
-            }
-          >
-            <Image src={imgStudy} loading="lazy" alt="icon" />
-            <div className={styles.contentArticle}>
-              <div>
-                <strong>Estudos</strong>
-                <div className={styles.dots}>
-                  <div></div>
-                  <div></div>
-                  <div></div>
+            <article
+              className={styles.secPlay}
+              onClick={() =>
+                openCard("play", "Jogos", false, playValue, shouldPlay)
+              }
+            >
+              <Image src={imgPlay} loading="lazy" alt="icon" />
+              <div className={styles.contentArticle}>
+                <div>
+                  <strong>Jogos</strong>
+                  <div className={styles.dots}>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                  </div>
                 </div>
-              </div>
 
-              <div className={styles.DifferentValue}>
-                {(periodOption.current === "weekly" ||
-                  periodOption.current === "monthly") &&
-                  inputSwitch && (
-                    <>
-                      {shouldStudy < studyValue && (
-                        <p className={styles.above}>valor ultrapassa</p>
-                      )}{" "}
-                      {shouldStudy > studyValue && (
-                        <p className={styles.below}>o valor está menor</p>
-                      )}{" "}
-                    </>
-                  )}
+                <div className={styles.DifferentValue}>
+                  {(periodOption.current === "weekly" ||
+                    periodOption.current === "monthly") &&
+                    inputSwitch && (
+                      <>
+                        {shouldPlay < playValue && (
+                          <p className={styles.above}>valor ultrapassa</p>
+                        )}{" "}
+                        {shouldPlay > playValue && (
+                          <p className={styles.below}>o valor está menor</p>
+                        )}{" "}
+                      </>
+                    )}
 
-                <h2>{studyValue}hrs</h2>
-              </div>
-
-              <span>Semana passada - 5h</span>
-            </div>
-          </article>
-
-          <article
-            className={styles.secExercise}
-            onClick={() =>
-              openCard(
-                "exercise",
-                "exercicios",
-                false,
-                exerciseValue,
-                shouldExercise
-              )
-            }
-          >
-            <Image src={imgExercise} loading="lazy" alt="icon" />
-            <div className={styles.contentArticle}>
-              <div>
-                <strong>Exercicio</strong>
-                <div className={styles.dots}>
-                  <div></div>
-                  <div></div>
-                  <div></div>
+                  <h2>{playValue}hrs</h2>
                 </div>
+
+                <span>Semana passada - 5h</span>
               </div>
+            </article>
 
-              <div className={styles.DifferentValue}>
-                {(periodOption.current === "weekly" ||
-                  periodOption.current === "monthly") &&
-                  inputSwitch && (
-                    <>
-                      {shouldExercise < exerciseValue && (
-                        <p className={styles.above}>valor ultrapassa</p>
-                      )}{" "}
-                      {shouldExercise > exerciseValue && (
-                        <p className={styles.below}>o valor está menor</p>
-                      )}{" "}
-                    </>
-                  )}
-
-                <h2>{exerciseValue}hrs</h2>
-              </div>
-
-              <span>Semana passada - 5h</span>
-            </div>
-          </article>
-
-          <article
-            className={styles.secSocial}
-            onClick={() =>
-              openCard("social", "social", false, socialValue, shouldSocial)
-            }
-          >
-            <Image src={imgSocial} loading="lazy" alt="icon" />
-            <div className={styles.contentArticle}>
-              <div>
-                <strong>Social</strong>
-                <div className={styles.dots}>
-                  <div></div>
-                  <div></div>
-                  <div></div>
+            <article
+              className={styles.secStudy}
+              onClick={() =>
+                openCard("study", "estudos", false, studyValue, shouldStudy)
+              }
+            >
+              <Image src={imgStudy} loading="lazy" alt="icon" />
+              <div className={styles.contentArticle}>
+                <div>
+                  <strong>Estudos</strong>
+                  <div className={styles.dots}>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                  </div>
                 </div>
-              </div>
 
-              <div className={styles.DifferentValue}>
-                {(periodOption.current === "weekly" ||
-                  periodOption.current === "monthly") &&
-                  inputSwitch && (
-                    <>
-                      {shouldSocial < socialValue && (
-                        <p className={styles.above}>valor ultrapassa</p>
-                      )}{" "}
-                      {shouldSocial > socialValue && (
-                        <p className={styles.below}>o valor está menor</p>
-                      )}{" "}
-                    </>
-                  )}
+                <div className={styles.DifferentValue}>
+                  {(periodOption.current === "weekly" ||
+                    periodOption.current === "monthly") &&
+                    inputSwitch && (
+                      <>
+                        {shouldStudy < studyValue && (
+                          <p className={styles.above}>valor ultrapassa</p>
+                        )}{" "}
+                        {shouldStudy > studyValue && (
+                          <p className={styles.below}>o valor está menor</p>
+                        )}{" "}
+                      </>
+                    )}
 
-                <h2>{socialValue}hrs</h2>
-              </div>
-
-              <span>Semana passada - 5h</span>
-            </div>
-          </article>
-
-          <article
-            className={styles.secSelfCare}
-            onClick={() =>
-              openCard(
-                "selfcare",
-                "sáude",
-                false,
-                selfcareValue,
-                shouldSelfcare
-              )
-            }
-          >
-            <Image src={imgSelfCare} loading="lazy" alt="icon" />
-            <div className={styles.contentArticle}>
-              <div>
-                <strong>Sáude</strong>
-                <div className={styles.dots}>
-                  <div></div>
-                  <div></div>
-                  <div></div>
+                  <h2>{studyValue}hrs</h2>
                 </div>
+
+                <span>Semana passada - 5h</span>
               </div>
+            </article>
 
-              <div className={styles.DifferentValue}>
-                {(periodOption.current === "weekly" ||
-                  periodOption.current === "monthly") &&
-                  inputSwitch && (
-                    <>
-                      {shouldSelfcare < selfcareValue && (
-                        <p className={styles.above}>valor ultrapassa</p>
-                      )}{" "}
-                      {shouldSelfcare > selfcareValue && (
-                        <p className={styles.below}>o valor está menor</p>
-                      )}{" "}
-                    </>
-                  )}
+            <article
+              className={styles.secExercise}
+              onClick={() =>
+                openCard(
+                  "exercise",
+                  "exercicios",
+                  false,
+                  exerciseValue,
+                  shouldExercise
+                )
+              }
+            >
+              <Image src={imgExercise} loading="lazy" alt="icon" />
+              <div className={styles.contentArticle}>
+                <div>
+                  <strong>Exercicio</strong>
+                  <div className={styles.dots}>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                  </div>
+                </div>
 
-                <h2>{selfcareValue}hrs</h2>
+                <div className={styles.DifferentValue}>
+                  {(periodOption.current === "weekly" ||
+                    periodOption.current === "monthly") &&
+                    inputSwitch && (
+                      <>
+                        {shouldExercise < exerciseValue && (
+                          <p className={styles.above}>valor ultrapassa</p>
+                        )}{" "}
+                        {shouldExercise > exerciseValue && (
+                          <p className={styles.below}>o valor está menor</p>
+                        )}{" "}
+                      </>
+                    )}
+
+                  <h2>{exerciseValue}hrs</h2>
+                </div>
+
+                <span>Semana passada - 5h</span>
               </div>
+            </article>
 
-              <span>Semana passada - 5h</span>
+            <article
+              className={styles.secSocial}
+              onClick={() =>
+                openCard("social", "social", false, socialValue, shouldSocial)
+              }
+            >
+              <Image src={imgSocial} loading="lazy" alt="icon" />
+              <div className={styles.contentArticle}>
+                <div>
+                  <strong>Social</strong>
+                  <div className={styles.dots}>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                  </div>
+                </div>
+
+                <div className={styles.DifferentValue}>
+                  {(periodOption.current === "weekly" ||
+                    periodOption.current === "monthly") &&
+                    inputSwitch && (
+                      <>
+                        {shouldSocial < socialValue && (
+                          <p className={styles.above}>valor ultrapassa</p>
+                        )}{" "}
+                        {shouldSocial > socialValue && (
+                          <p className={styles.below}>o valor está menor</p>
+                        )}{" "}
+                      </>
+                    )}
+
+                  <h2>{socialValue}hrs</h2>
+                </div>
+
+                <span>Semana passada - 5h</span>
+              </div>
+            </article>
+
+            <article
+              className={styles.secSelfCare}
+              onClick={() =>
+                openCard(
+                  "selfcare",
+                  "sáude",
+                  false,
+                  selfcareValue,
+                  shouldSelfcare
+                )
+              }
+            >
+              <Image src={imgSelfCare} loading="lazy" alt="icon" />
+              <div className={styles.contentArticle}>
+                <div>
+                  <strong>Sáude</strong>
+                  <div className={styles.dots}>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                  </div>
+                </div>
+
+                <div className={styles.DifferentValue}>
+                  {(periodOption.current === "weekly" ||
+                    periodOption.current === "monthly") &&
+                    inputSwitch && (
+                      <>
+                        {shouldSelfcare < selfcareValue && (
+                          <p className={styles.above}>valor ultrapassa</p>
+                        )}{" "}
+                        {shouldSelfcare > selfcareValue && (
+                          <p className={styles.below}>o valor está menor</p>
+                        )}{" "}
+                      </>
+                    )}
+
+                  <h2>{selfcareValue}hrs</h2>
+                </div>
+
+                <span>Semana passada - 5h</span>
+              </div>
+            </article>
+          </div>
+
+          {workValue +
+            playValue +
+            studyValue +
+            exerciseValue +
+            socialValue +
+            selfcareValue >
+            0 && (
+            <div className={styles.containerChart}>
+              <h2>Relatório</h2>
+              <p>Relatório de seg</p>
+              <Chart
+                series={[
+                  workValue,
+                  playValue,
+                  studyValue,
+                  exerciseValue,
+                  socialValue,
+                  selfcareValue,
+                ]}
+              />
             </div>
-          </article>
+          )}
         </section>
       </main>
     </div>
